@@ -11,19 +11,19 @@
   var WIN = 2048;
 
   // 水果阶梯：2 → 2048（大果王）
-  // 只用各平台都自带的老 Emoji；🫐(蓝莓) 属于 Emoji 11.0（2018），旧手机字体里没有，
-  // 会画成空白，因此整条阶梯按"从小到大"重排为下面这套常见水果。
+  // Emoji 只用于挑选形状（不参与绘制）；配色与形状一一对应且刻意拉开，
+  // 保证相邻档位（尤其 16 桃子 / 32 橙子 / 64 柠檬）在小屏上也能一眼分辨。
   var FRUIT = [
-    { v: 2, emoji: '🍇', color: '#7b5cc4', ink: '#ffffff' },
-    { v: 4, emoji: '🍒', color: '#d94f6a', ink: '#ffffff' },
-    { v: 8, emoji: '🍓', color: '#f0546b', ink: '#ffffff' },
-    { v: 16, emoji: '🍑', color: '#f98e5a', ink: '#5b2a10' },
-    { v: 32, emoji: '🍊', color: '#f9a03f', ink: '#5b2a10' },
-    { v: 64, emoji: '🍋', color: '#f7d34d', ink: '#5b4a10' },
+    { v: 2, emoji: '🍇', color: '#9b6ad6', ink: '#ffffff' },
+    { v: 4, emoji: '🍒', color: '#c0203c', ink: '#ffffff' },
+    { v: 8, emoji: '🍓', color: '#e8324f', ink: '#ffffff' },
+    { v: 16, emoji: '🍑', color: '#ee7a48', ink: '#5b2a10' },
+    { v: 32, emoji: '🍊', color: '#ef8a2b', ink: '#5b2a10' },
+    { v: 64, emoji: '🍋', color: '#efc431', ink: '#5b4a10' },
     { v: 128, emoji: '🍏', color: '#a8d94a', ink: '#2f4a10' },
     { v: 256, emoji: '🍐', color: '#bfe36a', ink: '#2f4a10' },
-    { v: 512, emoji: '🍍', color: '#f6c445', ink: '#5b3f10' },
-    { v: 1024, emoji: '🍉', color: '#e0503f', ink: '#ffffff' },
+    { v: 512, emoji: '🍍', color: '#f4a63a', ink: '#5b3f10' },
+    { v: 1024, emoji: '🍉', color: '#2f9e5c', ink: '#ffffff' },
     { v: 2048, emoji: '🍎', color: '#e63946', ink: '#ffffff' }
   ];
 

@@ -346,8 +346,79 @@
     '#f9a03f': 'orange', '#f7d34d': 'lemon', '#f6c445': 'lemon',
     '#a8d94a': 'apple', '#bfe36a': 'pear', '#8dc63f': 'kiwi',
     '#9b6ad6': 'grape', '#7b5cc4': 'grape', '#3fae6a': 'watermelon',
-    '#e0503f': 'watermelon', '#f2d13c': 'banana', '#f4a63a': 'pineapple'
+    '#e0503f': 'watermelon', '#f2d13c': 'banana', '#f4a63a': 'pineapple',
+    // 为区分度调整后的新配色
+    '#e8324f': 'strawberry', '#c0203c': 'cherry', '#ee7a48': 'peach',
+    '#ef8a2b': 'orange', '#efc431': 'lemon', '#f0dc44': 'banana',
+    '#2f9e5c': 'watermelon', '#d64562': 'cherry'
   };
+
+  // 每种水果一个专属角标：即使主图案在小屏上不易分辨，也能一眼区分
+  var FRUIT_MARKER = {
+    apple: { shape: 'dot', color: '#ffffff' },
+    orange: { shape: 'ring', color: '#ffffff' },
+    lemon: { shape: 'plus', color: '#ffffff' },
+    grape: { shape: 'triangle', color: '#ffffff' },
+    strawberry: { shape: 'square', color: '#ffffff' },
+    peach: { shape: 'diamond', color: '#ffffff' },
+    pear: { shape: 'bars', color: '#ffffff' },
+    kiwi: { shape: 'dot', color: '#3d3a24' },
+    cherry: { shape: 'ring', color: '#ffe14d' },
+    watermelon: { shape: 'triangle', color: '#ffffff' },
+    banana: { shape: 'plus', color: '#6b5a1e' },
+    pineapple: { shape: 'diamond', color: '#5b3f10' }
+  };
+
+  // 在卡片角落画角标
+  function drawMarker(ctx, name, cx, cy, size) {
+    var m = FRUIT_MARKER[name];
+    if (!m) return;
+    var s = size * 0.19;               // 角标半径
+    var x = cx + size * 0.36;
+    var y = cy + size * 0.36;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = m.color;
+    ctx.strokeStyle = m.color;
+    ctx.lineWidth = Math.max(1.4, s * 0.42);
+    ctx.lineCap = 'square';
+
+    switch (m.shape) {
+      case 'dot':
+        ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'ring':
+        ctx.beginPath(); ctx.arc(0, 0, s * 0.72, 0, Math.PI * 2); ctx.stroke();
+        break;
+      case 'square':
+        ctx.fillRect(-s * 0.8, -s * 0.8, s * 1.6, s * 1.6);
+        break;
+      case 'diamond':
+        ctx.beginPath();
+        ctx.moveTo(0, -s); ctx.lineTo(s, 0); ctx.lineTo(0, s); ctx.lineTo(-s, 0);
+        ctx.closePath(); ctx.fill();
+        break;
+      case 'triangle':
+        ctx.beginPath();
+        ctx.moveTo(0, -s * 0.95); ctx.lineTo(s * 0.9, s * 0.7); ctx.lineTo(-s * 0.9, s * 0.7);
+        ctx.closePath(); ctx.fill();
+        break;
+      case 'plus':
+        ctx.beginPath();
+        ctx.moveTo(-s, 0); ctx.lineTo(s, 0);
+        ctx.moveTo(0, -s); ctx.lineTo(0, s);
+        ctx.stroke();
+        break;
+      case 'bars':
+        ctx.beginPath();
+        ctx.moveTo(-s, -s * 0.7); ctx.lineTo(s * 0.2, -s * 0.7);
+        ctx.moveTo(-s * 0.6, 0); ctx.lineTo(s * 0.6, 0);
+        ctx.moveTo(-s * 0.3, s * 0.7); ctx.lineTo(s, s * 0.7);
+        ctx.stroke();
+        break;
+    }
+    ctx.restore();
+  }
 
   var SHAPE_BY_EMOJI = {
     '🍎': 'apple', '🍏': 'apple', '🍊': 'orange', '🍋': 'lemon',
@@ -375,7 +446,8 @@
    * @param {string} color 该水果主色
    */
   function art(ctx, emoji, color, cx, cy, size) {
-    var draw = FRUIT_SHAPES[shapeName(color, emoji)] || FRUIT_SHAPES.apple;
+    var name = shapeName(color, emoji);
+    var draw = FRUIT_SHAPES[name] || FRUIT_SHAPES.apple;
     ctx.save();
     // 浅色托盘底，让图案在深浅两种卡片底色上都有轮廓
     ctx.beginPath();
@@ -388,6 +460,7 @@
     ctx.strokeStyle = 'rgba(0,0,0,.12)';
     ctx.stroke();
     draw(ctx, cx, cy, size, color || '#f2704a');
+    drawMarker(ctx, name, cx, cy, size);
     ctx.restore();
     return true;
   }
@@ -617,7 +690,7 @@
   FP.gfx = {
     roundRect: roundRect, shadow: shadow, noShadow: noShadow,
     hexToRgba: hexToRgba, shade: shade, emoji: emoji, art: art,
-    fruitShapes: FRUIT_SHAPES, shapeName: shapeName,
+    fruitShapes: FRUIT_SHAPES, fruitMarkers: FRUIT_MARKER, shapeName: shapeName,
     label: label, fitText: fitText,
     createParticles: createParticles, createSurface: createSurface, createLoop: createLoop,
     polyfillCtx: polyfillCtx

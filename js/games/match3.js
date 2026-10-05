@@ -11,14 +11,14 @@
   var ROWS = 8;
   var RUN_TIME = 60;
 
-  // 只用各平台都自带的老 Emoji；🫐(蓝莓) 属于 Emoji 11.0（2018），旧手机会画成空白。
+  // Emoji 只用于挑选形状（不参与绘制）；配色与形状一一对应，尽量拉开亮度/色相
   var KINDS = [
-    { emoji: '🍓', color: '#ef4b6b' },
-    { emoji: '🍋', color: '#f6c445' },
-    { emoji: '🍇', color: '#7b5cc4' },
+    { emoji: '🍓', color: '#e8324f' },
+    { emoji: '🍋', color: '#efc431' },
+    { emoji: '🍇', color: '#9b6ad6' },
     { emoji: '🥝', color: '#8dc63f' },
-    { emoji: '🍊', color: '#f9943f' },
-    { emoji: '🍒', color: '#d94f6a' }
+    { emoji: '🍊', color: '#ef8a2b' },
+    { emoji: '🍒', color: '#c0203c' }
   ];
 
   var uid = 0;

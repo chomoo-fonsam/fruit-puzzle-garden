@@ -7,21 +7,22 @@
   var U = FP.util;
   var G = FP.gfx;
 
-  // 只用各平台都自带的老 Emoji（基本是 Unicode 6.0~9.0）：
-  // 🫐(蓝莓) 和 🥭(芒果) 属于 Emoji 11.0（2018），旧手机字体里没有，画出来会是空白，故不使用。
+  // 只用各平台都自带的老 Emoji（Emoji 仅用于挑选形状，不参与绘制）。
+  // 配色刻意拉开：草莓(亮粉) / 樱桃(深红) / 桃子(橙红) / 橙子(橙黄) / 柠檬(柠檬黄) / 香蕉(亮黄) / 西瓜(深绿)，
+  // 再配 canvas.js 里的专属角标，确保小屏上一眼可分辨。
   var FACES = [
     { emoji: '🍎', color: '#e63946' },
-    { emoji: '🍊', color: '#f9943f' },
-    { emoji: '🍋', color: '#f6c445' },
+    { emoji: '🍊', color: '#ef8a2b' },
+    { emoji: '🍋', color: '#efc431' },
     { emoji: '🍇', color: '#9b6ad6' },
-    { emoji: '🍓', color: '#ef4b6b' },
-    { emoji: '🍑', color: '#f98e5a' },
+    { emoji: '🍓', color: '#e8324f' },
+    { emoji: '🍑', color: '#ee7a48' },
     { emoji: '🍐', color: '#bfe36a' },
     { emoji: '🥝', color: '#8dc63f' },
-    { emoji: '🍒', color: '#f0546b' },
-    { emoji: '🍉', color: '#3fae6a' },
-    { emoji: '🍌', color: '#f2d13c' },
-    { emoji: '🍍', color: '#f6c445' }
+    { emoji: '🍒', color: '#c0203c' },
+    { emoji: '🍉', color: '#2f9e5c' },
+    { emoji: '🍌', color: '#f0dc44' },
+    { emoji: '🍍', color: '#f4a63a' }
   ];
 
   var LAYOUTS = {
@@ -323,6 +324,18 @@
     this.first = null;
     this.second = null;
 
+    // 记录本次翻牌对，便于自检时核对"看起来一样的牌为什么没配上"
+    this.lastPair = {
+      a: { cell: [a.r, a.c], face: a.face, emoji: a.emoji, color: a.color },
+      b: { cell: [b.r, b.c], face: b.face, emoji: b.emoji, color: b.color },
+      sameFace: a.face === b.face,
+      sameEmoji: a.emoji === b.emoji,
+      sameColor: a.color === b.color,
+      shapeA: G.shapeName ? G.shapeName(a.color, a.emoji) : null,
+      shapeB: G.shapeName ? G.shapeName(b.color, b.emoji) : null
+    };
+    this.lastResult = this.lastPair.sameFace ? 'matched' : 'miss';
+
     if (a.face === b.face) {
       a.matched = true;
       b.matched = true;
@@ -473,7 +486,13 @@
       matches: this.matches, moves: this.moves, flips: this.flips,
       previewLeft: this.previewLeft,
       first: this.first ? [this.first.r, this.first.c, this.first.face] : null,
+      lastResult: this.lastResult || null,
+      lastPair: this.lastPair || null,
       facesWithWrongCount: odd,
+      // 紧凑列出每对同图案的格子，方便对照画面
+      facesCompact: faces.map(function (f) {
+        return f.emoji + ' face' + f.face + ' x' + f.count + ' @ ' + f.cells.map(function (c) { return c.join('-'); }).join(' , ');
+      }),
       faces: faces
     };
   };
