@@ -11,13 +11,14 @@
   var ROWS = 8;
   var RUN_TIME = 60;
 
+  // 只用各平台都自带的老 Emoji；🫐(蓝莓) 属于 Emoji 11.0（2018），旧手机会画成空白。
   var KINDS = [
     { emoji: '🍓', color: '#ef4b6b' },
     { emoji: '🍋', color: '#f6c445' },
-    { emoji: '🫐', color: '#7b5cc4' },
+    { emoji: '🍇', color: '#7b5cc4' },
     { emoji: '🥝', color: '#8dc63f' },
     { emoji: '🍊', color: '#f9943f' },
-    { emoji: '🍇', color: '#b06ad6' }
+    { emoji: '🍒', color: '#d94f6a' }
   ];
 
   var uid = 0;
@@ -912,7 +913,7 @@
     ctx.fillStyle = 'rgba(255,255,255,.26)';
     ctx.fill();
 
-    G.emoji(ctx, kind.emoji, 0, 0, size * 0.62);
+    G.art(ctx, kind.emoji, kind.color, 0, 0, size * 0.62);
 
     if (hint) {
       var pulse = 0.5 + 0.5 * Math.sin(U.now() / 160);

@@ -7,6 +7,8 @@
   var U = FP.util;
   var G = FP.gfx;
 
+  // 只用各平台都自带的老 Emoji（基本是 Unicode 6.0~9.0）：
+  // 🫐(蓝莓) 和 🥭(芒果) 属于 Emoji 11.0（2018），旧手机字体里没有，画出来会是空白，故不使用。
   var FACES = [
     { emoji: '🍎', color: '#e63946' },
     { emoji: '🍊', color: '#f9943f' },
@@ -17,8 +19,8 @@
     { emoji: '🍐', color: '#bfe36a' },
     { emoji: '🥝', color: '#8dc63f' },
     { emoji: '🍒', color: '#f0546b' },
-    { emoji: '🫐', color: '#7b5cc4' },
-    { emoji: '🥭', color: '#f4a63a' },
+    { emoji: '🍉', color: '#3fae6a' },
+    { emoji: '🍌', color: '#f2d13c' },
     { emoji: '🍍', color: '#f6c445' }
   ];
 
@@ -530,7 +532,7 @@
           ctx.lineWidth = size * 0.06;
           ctx.stroke();
         }
-        G.emoji(ctx, c.emoji, 0, 0, size * 0.58);
+        G.art(ctx, c.emoji, c.color, 0, 0, size * 0.58);
       } else {
         // 背面
         G.roundRect(ctx, -size / 2, -size / 2, size, size, size * 0.22);
@@ -543,7 +545,7 @@
         G.noShadow(ctx);
 
         ctx.globalAlpha = 0.9;
-        G.emoji(ctx, '🍃', 0, -size * 0.06, size * 0.42);
+        G.art(ctx, '🍃', '#8dc63f', 0, -size * 0.06, size * 0.42);
         ctx.globalAlpha = 1;
         G.roundRect(ctx, -size / 2 + size * 0.1, -size / 2 + size * 0.1, size * 0.8, size * 0.8, size * 0.16);
         ctx.strokeStyle = 'rgba(255,255,255,.16)';

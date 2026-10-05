@@ -102,6 +102,100 @@
     ctx.restore();
   }
 
+  /* ---------------- 图案兼容层 ----------------
+   * 有些水果 Emoji 属于较新的 Unicode 版本（例如 🫐🥭 是 Emoji 11.0，2018 年才有），
+   * 旧一点的手机系统字体里没有这个字形，canvas 画出来会是一片空白。
+   * 这里用一次像素检测判断设备能否真正画出该字符，画不出就降级为同色圆点，
+   * 保证图案在"最差情况下"依然是可辨识、可配对的花色。
+   */
+
+  var glyphSupport = {};
+  var probeCtx = null;
+  var probeResult = {};
+
+  function supportEmoji(ch) {
+    if (glyphSupport[ch] !== undefined) return glyphSupport[ch];
+    // 已知较新的字符直接判定为不支持，省掉一次像素检测
+    if (ch === '🫐' || ch === '🥭' || ch === '🫒' || ch === '🫑') {
+      glyphSupport[ch] = false;
+      return false;
+    }
+    var ok = true;
+    try {
+      if (!probeCtx && doc && doc.createElement) {
+        var cv = doc.createElement('canvas');
+        cv.width = 48;
+        cv.height = 48;
+        probeCtx = cv.getContext('2d');
+      }
+      if (probeCtx) {
+        var key = 'e' + ch;
+        if (probeResult[key] === undefined) {
+          var box = [];
+          probeCtx.clearRect(0, 0, 48, 48);
+          probeCtx.textBaseline = 'top';
+          probeCtx.font = '32px ' + EMOJI_FONT;
+          probeCtx.fillText(ch, 4, 4);
+          var d = probeCtx.getImageData(0, 0, 48, 48).data;
+          for (var i = 3; i < d.length; i += 4) {
+            if (d[i] > 12) { box.push(1); if (box.length > 1) break; }
+          }
+          probeResult[key] = box.length;
+        }
+        // 完全没有像素 = 设备画不出这个字形
+        ok = probeResult[key] > 0;
+      }
+    } catch (e) {
+      ok = true; // 检测失败时按"支持"处理，不影响正常设备
+    }
+    glyphSupport[ch] = ok;
+    return ok;
+  }
+
+  // 降级图案：主体圆 + 高光 + 小果柄
+  function fallbackArt(ctx, color, cx, cy, size) {
+    var r = size * 0.42;
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = color || '#f2704a';
+    ctx.fill();
+    ctx.lineWidth = Math.max(1, r * 0.14);
+    ctx.strokeStyle = 'rgba(0,0,0,.14)';
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.3, -r * 0.34, r * 0.3, r * 0.18, -0.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.92);
+    ctx.quadraticCurveTo(r * 0.34, -r * 1.3, r * 0.06, -r * 1.06);
+    ctx.lineWidth = Math.max(1.2, r * 0.16);
+    ctx.strokeStyle = 'rgba(70,120,40,.85)';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  /**
+   * 画一个水果图案：设备支持该 Emoji 就画 Emoji，否则降级为同色圆点。
+   * @param {string} char  水果 Emoji
+   * @param {string} color 该水果的主色（用于降级图案）
+   */
+  function art(ctx, char, color, cx, cy, size, rotate) {
+    if (char && supportEmoji(char)) {
+      emoji(ctx, char, cx, cy, size, rotate);
+      return true;
+    }
+    fallbackArt(ctx, color, cx, cy, size);
+    return false;
+  }
+
   function label(ctx, text, cx, cy, opts) {
     opts = opts || {};
     ctx.save();
@@ -326,7 +420,8 @@
 
   FP.gfx = {
     roundRect: roundRect, shadow: shadow, noShadow: noShadow,
-    hexToRgba: hexToRgba, shade: shade, emoji: emoji, label: label, fitText: fitText,
+    hexToRgba: hexToRgba, shade: shade, emoji: emoji, art: art,
+    supportsEmoji: supportEmoji, label: label, fitText: fitText,
     createParticles: createParticles, createSurface: createSurface, createLoop: createLoop,
     polyfillCtx: polyfillCtx
   };
