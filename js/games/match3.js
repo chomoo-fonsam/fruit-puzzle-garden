@@ -279,23 +279,29 @@
   };
 
   // 轻量判定：某个格子是否处于三连中（用于"是否还有可消除的交换"）
+  // 单格是否处于三连中（只看棋盘数据，不依赖方块自身的坐标，避免任何状态污染）
   Match3.prototype.createsMatch = function (r, c) {
-    var grid = this.grid;
-    var t = grid[r][c];
+    var t = this.grid[r] && this.grid[r][c];
     if (!t) return false;
-    var n = 1, cc = c - 1;
-    while (cc >= 0 && grid[r][cc] && grid[r][cc].type === t.type) { n++; cc--; }
-    cc = c + 1;
-    while (cc < COLS && grid[r][cc] && grid[r][cc].type === t.type) { n++; cc++; }
+    var grid = this.grid;
+
+    var n = 1, i = c - 1;
+    while (i >= 0 && grid[r][i] && grid[r][i].type === t.type) { n++; i--; }
+    i = c + 1;
+    while (i < COLS && grid[r][i] && grid[r][i].type === t.type) { n++; i++; }
     if (n >= 3) return true;
+
     n = 1;
-    var rr = r - 1;
-    while (rr >= 0 && grid[rr][c] && grid[rr][c].type === t.type) { n++; rr--; }
-    rr = r + 1;
-    while (rr < ROWS && grid[rr][c] && grid[rr][c].type === t.type) { n++; rr++; }
+    i = r - 1;
+    while (i >= 0 && grid[i][c] && grid[i][c].type === t.type) { n++; i--; }
+    i = r + 1;
+    while (i < ROWS && grid[i][c] && grid[i][c].type === t.type) { n++; i++; }
     return n >= 3;
   };
 
+  // 找出一个"换过去就能消"的相邻对。
+  // 注意：这里只用 grid 数组做临时交换试算，绝不改动 block.r / block.c，
+  // 否则方块内部坐标会与棋盘实际位置错位，后续提示就会指向错误的格子。
   Match3.prototype.findMove = function () {
     var dirs = [[0, 1], [1, 0]];
     for (var r = 0; r < ROWS; r++) {
@@ -304,15 +310,44 @@
           var r2 = r + dirs[d][0], c2 = c + dirs[d][1];
           if (r2 >= ROWS || c2 >= COLS) continue;
           var a = this.grid[r][c], b = this.grid[r2][c2];
+          // 只有不同种类的水果互换才可能产生新的三连
           if (!a || !b || a.type === b.type) continue;
           this.grid[r][c] = b; this.grid[r2][c2] = a;
           var hit = this.createsMatch(r, c) || this.createsMatch(r2, c2);
           this.grid[r][c] = a; this.grid[r2][c2] = b;
-          if (hit) return { a: a, b: b };
+          if (hit) return { a: a, b: b, ar: r, ac: c, br: r2, bc: c2 };
         }
       }
     }
     return null;
+  };
+
+  // 自检：把当前棋盘与"提示给出的两步"打印出来，便于核对提示是否正确
+  Match3.prototype.debugBoard = function () {
+    var grid = this.grid.map(function (row) {
+      return row.map(function (t) { return t ? t.type : -1; });
+    });
+    var mv = this.findMove();
+    var pairs = [];
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        if (c + 1 < COLS && this.grid[r][c] && this.grid[r][c + 1] &&
+            this.grid[r][c].type === this.grid[r][c + 1].type) {
+          pairs.push([r, c, r, c + 1]);
+        }
+        if (r + 1 < ROWS && this.grid[r][c] && this.grid[r + 1][c] &&
+            this.grid[r][c].type === this.grid[r + 1][c].type) {
+          pairs.push([r, c, r + 1, c]);
+        }
+      }
+    }
+    return {
+      grid: grid,
+      state: this.state,
+      sameTypeNeighbours: pairs,
+      hint: mv ? { a: [mv.ar, mv.ac], b: [mv.br, mv.bc], types: [mv.a.type, mv.b.type] } : null,
+      hintOk: mv ? mv.a.type !== mv.b.type : null
+    };
   };
 
   /* ---------------- 输入 ---------------- */
@@ -477,7 +512,9 @@
       U.vibrate(8);
     } else {
       this.app.audio.play('warn');
-      this.app.toast(FP.i18n.t('toast.swapInvalid'), { duration: 1100 });
+      // 两个同类水果互换不会产生新的三连，反馈要说清楚原因，否则玩家会以为"游戏不认同样的水果"
+      var sameKind = (a.type === b.type);
+      this.app.toast(FP.i18n.t(sameKind ? 'toast.swapSameKind' : 'toast.swapInvalid'), { duration: 1500 });
     }
     this.syncHud();
     return true;

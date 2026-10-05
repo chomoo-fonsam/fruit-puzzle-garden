@@ -839,6 +839,20 @@
       move: function (dir) { if (app.game && app.game.move) app.game.move(dir); },
       start: function (m) { start(m, { fresh: true }); },
       save: function () { saveNow(); return FP.store.exportAll(); },
+      // 消消乐自检：打印棋盘、相邻同类格、以及"提示"给出的那一步
+      board: function () {
+        if (app.game && app.game.debugBoard) return app.game.debugBoard();
+        if (app.game && app.game.grid) {
+          return app.game.grid.map(function (row) {
+            return row.map(function (t) { return t ? (t.value != null ? t.value : t.type) : -1; });
+          });
+        }
+        return null;
+      },
+      hint: function () {
+        if (app.game && app.game.hint) { app.game.hint(); return 'hint requested'; }
+        return 'no hint available for this mode';
+      },
       // 坐标自检：逻辑尺寸与真实渲染尺寸必须一致，否则操作会和画面对不上
       probe: function () {
         var s = app.surface;
