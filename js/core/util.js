@@ -249,6 +249,8 @@
     fmt: fmt, fmtTime: fmtTime, fmtDate: fmtDate,
     createBus: createBus, createTimeline: createTimeline,
     Device: Device, vibrate: vibrate, isPortrait: isPortrait,
-    logErr: logErr, safe: safe, root: root
+    logErr: logErr, safe: safe, root: root,
+    // 构建号：改动代码时随手 +1，控制台跑 FP.util.build 即可确认线上是否最新
+    build: '2026-10-05.13'
   };
 })(window);
