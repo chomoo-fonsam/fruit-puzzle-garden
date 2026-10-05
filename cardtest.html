@@ -133,44 +133,175 @@
     ctx.fill();
   }
 
-  // 复刻「新」art()：同色圆底 + Emoji
+  // 复刻「新」画法：纯 Canvas 手绘水果（当前线上代码，完全不依赖字体）
   function drawArtNew(ctx, cx, cy, size, color, emojiChar) {
-    var r = (size * 0.58) / 2;
-    ctx.save();
-    ctx.translate(cx, cy);
-
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fillStyle = color; ctx.fill();
-
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.8, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fill();
-
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.lineWidth = Math.max(1, r * 0.12);
-    ctx.strokeStyle = 'rgba(0,0,0,.16)'; ctx.stroke();
-
+    // 浅色托盘底
     ctx.beginPath();
-    ctx.ellipse(-r * 0.3, -r * 0.36, r * 0.3, r * 0.16, -0.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fill();
-
+    ctx.arc(cx, cy, size * 0.58 * 0.54, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    ctx.fill();
     ctx.beginPath();
-    ctx.moveTo(0, -r * 0.88);
-    ctx.quadraticCurveTo(r * 0.36, -r * 1.3, r * 0.06, -r * 1.04);
-    ctx.lineWidth = Math.max(1.2, r * 0.15);
-    ctx.strokeStyle = 'rgba(70,120,40,.8)';
-    ctx.lineCap = 'round'; ctx.stroke();
-    ctx.restore();
+    ctx.arc(cx, cy, size * 0.58 * 0.54, 0, Math.PI * 2);
+    ctx.lineWidth = Math.max(1, size * 0.58 * 0.03);
+    ctx.strokeStyle = 'rgba(0,0,0,.12)';
+    ctx.stroke();
 
-    // Emoji
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.font = (size * 0.58 * 0.92) + 'px ' + FONTS;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#000';
-    ctx.fillText(emojiChar, 0, size * 0.02);
-    ctx.restore();
+    var s = size * 0.58;
+    var x = cx, y = cy;
+    var name = SHAPE_BY_COLOR[color] || SHAPE_BY_EMOJI[emojiChar] || 'apple';
+    (SHAPES[name] || SHAPES.apple)(ctx, x, y, s, color);
   }
+
+  /* ---- 与 js/core/canvas.js 中 FRUIT_SHAPES 等价的最小复刻（仅用于本测试页） ---- */
+  function circle(ctx, x, y, r, c) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill(); }
+  function leafShape(ctx, x, y, len, angle, c) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(len * 0.55, -len * 0.42, len, 0);
+    ctx.quadraticCurveTo(len * 0.55, len * 0.42, 0, 0);
+    ctx.closePath(); ctx.fillStyle = c || '#5fae44'; ctx.fill(); ctx.restore();
+  }
+  function stem(ctx, x, y, h, c) {
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(x + h * 0.25, y - h * 0.6, x + h * 0.08, y - h);
+    ctx.lineWidth = Math.max(1.2, h * 0.16); ctx.strokeStyle = c || '#7a5230'; ctx.lineCap = 'round'; ctx.stroke();
+  }
+  function hl(ctx, x, y, rx, ry) {
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, -0.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fill();
+  }
+  function shadeColor(c, amount) {
+    var h = String(c).replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var n = parseInt(h, 16);
+    if (isNaN(n)) return c;
+    var f = function (v) { return Math.max(0, Math.min(255, Math.round(v + 255 * amount))); };
+    return 'rgb(' + f((n >> 16) & 255) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')';
+  }
+  var SHAPES = {
+    apple: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.arc(x - s * 0.15, y + s * 0.08, s * 0.34, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.15, y + s * 0.08, s * 0.34, 0, Math.PI * 2);
+      ctx.fillStyle = c; ctx.fill();
+      stem(ctx, x, y - s * 0.2, s * 0.28);
+      leafShape(ctx, x + s * 0.06, y - s * 0.44, s * 0.34, -0.35);
+      hl(ctx, x - s * 0.2, y - s * 0.04, s * 0.1, s * 0.06);
+    },
+    orange: function (ctx, x, y, s, c) {
+      circle(ctx, x, y, s * 0.4, c);
+      ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,.32)'; ctx.lineWidth = Math.max(1, s * 0.03);
+      for (var i = 0; i < 6; i++) {
+        ctx.beginPath(); ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(i * Math.PI / 3) * s * 0.34, y + Math.sin(i * Math.PI / 3) * s * 0.34);
+        ctx.stroke();
+      }
+      ctx.restore();
+      leafShape(ctx, x + s * 0.06, y - s * 0.38, s * 0.26, -0.5);
+      hl(ctx, x - s * 0.16, y - s * 0.16, s * 0.1, s * 0.06);
+    },
+    lemon: function (ctx, x, y, s, c) {
+      ctx.beginPath(); ctx.ellipse(x, y, s * 0.42, s * 0.27, -0.35, 0, Math.PI * 2);
+      ctx.fillStyle = c; ctx.fill();
+      circle(ctx, x - s * 0.41, y + s * 0.14, s * 0.065, c);
+      circle(ctx, x + s * 0.41, y - s * 0.14, s * 0.065, c);
+      leafShape(ctx, x + s * 0.2, y - s * 0.28, s * 0.24, -0.6);
+    },
+    grape: function (ctx, x, y, s, c) {
+      var pts = [[0, -0.34], [-0.22, -0.18], [0.22, -0.18], [-0.34, 0.06], [0, 0.06], [0.34, 0.06], [-0.18, 0.3], [0.18, 0.3], [0, 0.5]];
+      for (var i = 0; i < pts.length; i++) circle(ctx, x + pts[i][0] * s, y + pts[i][1] * s, s * 0.17, i % 2 ? shadeColor(c, -0.08) : c);
+      stem(ctx, x, y - s * 0.4, s * 0.22);
+      leafShape(ctx, x + s * 0.08, y - s * 0.5, s * 0.3, -0.4);
+    },
+    strawberry: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.moveTo(x, y + s * 0.46);
+      ctx.quadraticCurveTo(x - s * 0.44, y + s * 0.1, x - s * 0.34, y - s * 0.16);
+      ctx.quadraticCurveTo(x, y - s * 0.4, x + s * 0.34, y - s * 0.16);
+      ctx.quadraticCurveTo(x + s * 0.44, y + s * 0.1, x, y + s * 0.46);
+      ctx.closePath(); ctx.fillStyle = c; ctx.fill();
+      var seeds = [[-0.14, -0.04], [0.12, 0.02], [-0.02, 0.16], [0.2, -0.14], [-0.22, -0.14], [0.04, 0.3]];
+      for (var i = 0; i < seeds.length; i++) circle(ctx, x + seeds[i][0] * s, y + seeds[i][1] * s, s * 0.035, 'rgba(255,255,255,.8)');
+      leafShape(ctx, x, y - s * 0.24, s * 0.3, -0.1, '#4f9c3a');
+      leafShape(ctx, x, y - s * 0.24, s * 0.3, -0.9, '#5fae44');
+      leafShape(ctx, x, y - s * 0.24, s * 0.3, 0.7, '#4f9c3a');
+    },
+    peach: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.arc(x - s * 0.16, y + s * 0.06, s * 0.34, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.16, y + s * 0.06, s * 0.34, 0, Math.PI * 2);
+      ctx.fillStyle = c; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x, y - s * 0.26);
+      ctx.quadraticCurveTo(x + s * 0.06, y + s * 0.06, x, y + s * 0.4);
+      ctx.lineWidth = Math.max(1, s * 0.035); ctx.strokeStyle = 'rgba(160,60,40,.4)'; ctx.stroke();
+      leafShape(ctx, x + s * 0.08, y - s * 0.3, s * 0.3, -0.45);
+    },
+    pear: function (ctx, x, y, s, c) {
+      circle(ctx, x, y + s * 0.14, s * 0.32, c);
+      circle(ctx, x, y - s * 0.14, s * 0.22, c);
+      stem(ctx, x, y - s * 0.3, s * 0.22);
+      leafShape(ctx, x + s * 0.06, y - s * 0.34, s * 0.26, -0.4);
+    },
+    kiwi: function (ctx, x, y, s, c) {
+      circle(ctx, x, y, s * 0.42, '#8a6a45');
+      circle(ctx, x, y, s * 0.34, c);
+      circle(ctx, x, y, s * 0.2, '#f3f6e6');
+      for (var i = 0; i < 10; i++) {
+        var a = i * Math.PI / 5;
+        circle(ctx, x + Math.cos(a) * s * 0.26, y + Math.sin(a) * s * 0.26, s * 0.028, '#3d3a24');
+      }
+    },
+    cherry: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.2, y + s * 0.16);
+      ctx.quadraticCurveTo(x - s * 0.02, y - s * 0.4, x + s * 0.24, y - s * 0.36);
+      ctx.moveTo(x + s * 0.2, y + s * 0.24);
+      ctx.quadraticCurveTo(x + s * 0.16, y - s * 0.2, x + s * 0.24, y - s * 0.36);
+      ctx.lineWidth = Math.max(1.2, s * 0.05); ctx.strokeStyle = '#6b8f3a'; ctx.stroke();
+      circle(ctx, x - s * 0.2, y + s * 0.26, s * 0.22, c);
+      circle(ctx, x + s * 0.2, y + s * 0.32, s * 0.22, shadeColor(c, -0.08));
+      leafShape(ctx, x + s * 0.24, y - s * 0.36, s * 0.28, -0.5);
+    },
+    watermelon: function (ctx, x, y, s, c) {
+      ctx.beginPath(); ctx.arc(x, y + s * 0.22, s * 0.44, Math.PI, 0); ctx.closePath();
+      ctx.fillStyle = c; ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y + s * 0.2, s * 0.34, Math.PI, 0); ctx.closePath();
+      ctx.fillStyle = '#e8534f'; ctx.fill();
+      var seeds = [[-0.16, 0.18], [0, 0.1], [0.16, 0.18], [-0.08, 0.3], [0.09, 0.3]];
+      for (var i = 0; i < seeds.length; i++) {
+        ctx.save(); ctx.translate(x + seeds[i][0] * s, y + seeds[i][1] * s); ctx.rotate(-0.3);
+        ctx.beginPath(); ctx.ellipse(0, 0, s * 0.035, s * 0.06, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#2b2b1f'; ctx.fill(); ctx.restore();
+      }
+    },
+    banana: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.4, y - s * 0.12);
+      ctx.quadraticCurveTo(x, y + s * 0.62, x + s * 0.42, y - s * 0.06);
+      ctx.quadraticCurveTo(x + s * 0.16, y + s * 0.3, x - s * 0.26, y + s * 0.02);
+      ctx.closePath(); ctx.fillStyle = c; ctx.fill();
+      circle(ctx, x - s * 0.42, y - s * 0.14, s * 0.05, '#6b5a1e');
+    },
+    pineapple: function (ctx, x, y, s, c) {
+      for (var i = -2; i <= 2; i++) leafShape(ctx, x, y - s * 0.26, s * 0.34, -Math.PI / 2 + i * 0.38, '#4f9c3a');
+      ctx.beginPath(); ctx.ellipse(x, y + s * 0.1, s * 0.3, s * 0.36, 0, 0, Math.PI * 2);
+      ctx.fillStyle = c; ctx.fill();
+    }
+  };
+  var SHAPE_BY_COLOR = {
+    '#e63946': 'apple', '#d94f6a': 'cherry', '#f0546b': 'strawberry',
+    '#ef4b6b': 'strawberry', '#f98e5a': 'peach', '#f9943f': 'orange',
+    '#f9a03f': 'orange', '#f7d34d': 'lemon', '#f6c445': 'lemon',
+    '#a8d94a': 'apple', '#bfe36a': 'pear', '#8dc63f': 'kiwi',
+    '#9b6ad6': 'grape', '#7b5cc4': 'grape', '#3fae6a': 'watermelon',
+    '#e0503f': 'watermelon', '#f2d13c': 'banana', '#f4a63a': 'pineapple'
+  };
+  var SHAPE_BY_EMOJI = {
+    '🍎': 'apple', '🍏': 'apple', '🍊': 'orange', '🍋': 'lemon',
+    '🍇': 'grape', '🍓': 'strawberry', '🍑': 'peach', '🍐': 'pear',
+    '🥝': 'kiwi', '🍒': 'cherry', '🍉': 'watermelon', '🍌': 'banana',
+    '🍍': 'pineapple'
+  };
 
   // 复刻「旧」画法：只画 Emoji
   function drawArtOld(ctx, cx, cy, size, emojiChar) {

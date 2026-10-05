@@ -102,70 +102,293 @@
     ctx.restore();
   }
 
-  /* ---------------- 水果图案兼容层 ----------------
+  /* ---------------- 水果图形库（纯 Canvas 绘制，不依赖任何字体） ----------------
    *
-   * 背景：iOS Safari 的 Canvas 对彩色 Emoji 的渲染并不稳定（某些字符/某些机型直接画不出来），
-   * 而像素探测（画一次再 getImageData 看有没有像素）在这类设备上会误判——实测 iPhone 上
-   * 只有极少数 Emoji 能通过探测，其余全部被误判为"不支持"，卡片于是变成一片空白。
+   * 为什么要有这一层：
+   *  1. iOS Safari 的 Canvas 对彩色 Emoji 渲染并不稳定；
+   *  2. 更关键的是，在 iOS「锁定模式 / 高级隐私保护」或被内置浏览器（WKWebView，如 QQ / 微信）
+   *     加载时，系统彩色 Emoji 字体会被限制，所有水果字符会退化成同一个单色回退字形 ——
+   *     实测表现为"记忆果园里 24 张卡片的图案长得一模一样"，游戏因此无法配对。
    *
-   * 因此这里不再做任何探测，只用两条确定的规则，任何设备上都成立：
-   *   规则 1：先画一层"同色圆形底"（带白描边 + 高光）——Emoji 画不出来时，它就是卡片花色；
-   *   规则 2：再在这个底上画 Emoji——能画出来时，底被盖住，看到的就是水果。
-   * 最坏情况（Emoji 完全不渲染）也保证每张卡有一个颜色明确、彼此可区分的圆形图案。
+   * 所以卡面主图案改为用 Canvas 图元手绘：轮廓 + 主色双重区分，任何设备上完全一致。
+   * 传入的 Emoji 只作为"该画哪种水果"的线索，不参与绘制。
    */
 
-  // 同色圆形底：既是"水果托盘"，也是 Emoji 失效时的兜底花色
-  function artBase(ctx, color, cx, cy, size) {
-    var r = size * 0.5;
-    ctx.save();
-    ctx.translate(cx, cy);
-
-    // 主体
+  function circle(ctx, x, y, r, color) {
     ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fillStyle = color || '#f2704a';
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
     ctx.fill();
+  }
 
-    // 内圈提亮，让圆更有"果肉"感
+  function highlight(ctx, x, y, rx, ry) {
     ctx.beginPath();
-    ctx.arc(0, 0, r * 0.8, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,.22)';
-    ctx.fill();
-
-    // 外描边
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.lineWidth = Math.max(1, r * 0.12);
-    ctx.strokeStyle = 'rgba(0,0,0,.16)';
-    ctx.stroke();
-
-    // 左上高光
-    ctx.beginPath();
-    ctx.ellipse(-r * 0.3, -r * 0.36, r * 0.3, r * 0.16, -0.5, 0, Math.PI * 2);
+    ctx.ellipse(x, y, rx, ry, -0.5, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(255,255,255,.5)';
     ctx.fill();
+  }
 
-    // 小果柄
+  function leafShape(ctx, x, y, len, angle, color) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
     ctx.beginPath();
-    ctx.moveTo(0, -r * 0.88);
-    ctx.quadraticCurveTo(r * 0.36, -r * 1.3, r * 0.06, -r * 1.04);
-    ctx.lineWidth = Math.max(1.2, r * 0.15);
-    ctx.strokeStyle = 'rgba(70,120,40,.8)';
-    ctx.lineCap = 'round';
-    ctx.stroke();
-
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(len * 0.55, -len * 0.42, len, 0);
+    ctx.quadraticCurveTo(len * 0.55, len * 0.42, 0, 0);
+    ctx.closePath();
+    ctx.fillStyle = color || '#5fae44';
+    ctx.fill();
     ctx.restore();
   }
 
+  function stem(ctx, x, y, h, color) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(x + h * 0.25, y - h * 0.6, x + h * 0.08, y - h);
+    ctx.lineWidth = Math.max(1.2, h * 0.16);
+    ctx.strokeStyle = color || '#7a5230';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  var FRUIT_SHAPES = {
+    // 苹果 / 青苹果：双圆弧轮廓 + 果柄 + 叶
+    apple: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.arc(x - s * 0.15, y + s * 0.08, s * 0.34, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.15, y + s * 0.08, s * 0.34, 0, Math.PI * 2);
+      ctx.fillStyle = c;
+      ctx.fill();
+      stem(ctx, x, y - s * 0.2, s * 0.28);
+      leafShape(ctx, x + s * 0.06, y - s * 0.44, s * 0.34, -0.35);
+      highlight(ctx, x - s * 0.2, y - s * 0.04, s * 0.1, s * 0.06);
+    },
+    // 橙子：圆 + 瓣纹 + 叶
+    orange: function (ctx, x, y, s, c) {
+      circle(ctx, x, y, s * 0.4, c);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,.32)';
+      ctx.lineWidth = Math.max(1, s * 0.03);
+      for (var i = 0; i < 6; i++) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(i * Math.PI / 3) * s * 0.34, y + Math.sin(i * Math.PI / 3) * s * 0.34);
+        ctx.stroke();
+      }
+      ctx.restore();
+      leafShape(ctx, x + s * 0.06, y - s * 0.38, s * 0.26, -0.5);
+      highlight(ctx, x - s * 0.16, y - s * 0.16, s * 0.1, s * 0.06);
+    },
+    // 柠檬：斜椭圆 + 两端尖角
+    lemon: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.ellipse(x, y, s * 0.42, s * 0.27, -0.35, 0, Math.PI * 2);
+      ctx.fillStyle = c;
+      ctx.fill();
+      circle(ctx, x - s * 0.41, y + s * 0.14, s * 0.065, c);
+      circle(ctx, x + s * 0.41, y - s * 0.14, s * 0.065, c);
+      leafShape(ctx, x + s * 0.2, y - s * 0.28, s * 0.24, -0.6);
+      highlight(ctx, x - s * 0.16, y - s * 0.09, s * 0.12, s * 0.05);
+    },
+    // 葡萄：一串错落的小圆 + 果柄 + 叶
+    grape: function (ctx, x, y, s, c) {
+      var pts = [
+        [0, -0.34], [-0.22, -0.18], [0.22, -0.18],
+        [-0.34, 0.06], [0, 0.06], [0.34, 0.06],
+        [-0.18, 0.3], [0.18, 0.3], [0, 0.5]
+      ];
+      for (var i = 0; i < pts.length; i++) {
+        circle(ctx, x + pts[i][0] * s, y + pts[i][1] * s, s * 0.17, i % 2 ? shade(c, -0.08) : c);
+      }
+      stem(ctx, x, y - s * 0.4, s * 0.22);
+      leafShape(ctx, x + s * 0.08, y - s * 0.5, s * 0.3, -0.4);
+    },
+    // 草莓：倒心形 + 籽 + 绿蒂
+    strawberry: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.moveTo(x, y + s * 0.46);
+      ctx.quadraticCurveTo(x - s * 0.44, y + s * 0.1, x - s * 0.34, y - s * 0.16);
+      ctx.quadraticCurveTo(x, y - s * 0.4, x + s * 0.34, y - s * 0.16);
+      ctx.quadraticCurveTo(x + s * 0.44, y + s * 0.1, x, y + s * 0.46);
+      ctx.closePath();
+      ctx.fillStyle = c;
+      ctx.fill();
+      var seeds = [[-0.14, -0.04], [0.12, 0.02], [-0.02, 0.16], [0.2, -0.14], [-0.22, -0.14], [0.04, 0.3]];
+      for (var i = 0; i < seeds.length; i++) {
+        circle(ctx, x + seeds[i][0] * s, y + seeds[i][1] * s, s * 0.035, 'rgba(255,255,255,.8)');
+      }
+      leafShape(ctx, x, y - s * 0.24, s * 0.3, -0.1, '#4f9c3a');
+      leafShape(ctx, x, y - s * 0.24, s * 0.3, -0.9, '#5fae44');
+      leafShape(ctx, x, y - s * 0.24, s * 0.3, 0.7, '#4f9c3a');
+    },
+    // 桃子：双圆弧 + 中缝 + 叶
+    peach: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.arc(x - s * 0.16, y + s * 0.06, s * 0.34, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.16, y + s * 0.06, s * 0.34, 0, Math.PI * 2);
+      ctx.fillStyle = c;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x, y - s * 0.26);
+      ctx.quadraticCurveTo(x + s * 0.06, y + s * 0.06, x, y + s * 0.4);
+      ctx.lineWidth = Math.max(1, s * 0.035);
+      ctx.strokeStyle = 'rgba(160,60,40,.4)';
+      ctx.stroke();
+      leafShape(ctx, x + s * 0.08, y - s * 0.3, s * 0.3, -0.45);
+      highlight(ctx, x - s * 0.22, y - s * 0.02, s * 0.1, s * 0.06);
+    },
+    // 梨：下大上小两个圆 + 果柄
+    pear: function (ctx, x, y, s, c) {
+      circle(ctx, x, y + s * 0.14, s * 0.32, c);
+      circle(ctx, x, y - s * 0.14, s * 0.22, c);
+      stem(ctx, x, y - s * 0.3, s * 0.22);
+      leafShape(ctx, x + s * 0.06, y - s * 0.34, s * 0.26, -0.4);
+      highlight(ctx, x - s * 0.16, y + s * 0.06, s * 0.1, s * 0.07);
+    },
+    // 猕猴桃：外皮 + 果肉 + 白心 + 一圈籽
+    kiwi: function (ctx, x, y, s, c) {
+      circle(ctx, x, y, s * 0.42, '#8a6a45');
+      circle(ctx, x, y, s * 0.34, c);
+      circle(ctx, x, y, s * 0.2, '#f3f6e6');
+      for (var i = 0; i < 10; i++) {
+        var a = i * Math.PI / 5;
+        circle(ctx, x + Math.cos(a) * s * 0.26, y + Math.sin(a) * s * 0.26, s * 0.028, '#3d3a24');
+      }
+    },
+    // 樱桃：两颗果 + 交叉果柄 + 叶
+    cherry: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.2, y + s * 0.16);
+      ctx.quadraticCurveTo(x - s * 0.02, y - s * 0.4, x + s * 0.24, y - s * 0.36);
+      ctx.moveTo(x + s * 0.2, y + s * 0.24);
+      ctx.quadraticCurveTo(x + s * 0.16, y - s * 0.2, x + s * 0.24, y - s * 0.36);
+      ctx.lineWidth = Math.max(1.2, s * 0.05);
+      ctx.strokeStyle = '#6b8f3a';
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      circle(ctx, x - s * 0.2, y + s * 0.26, s * 0.22, c);
+      circle(ctx, x + s * 0.2, y + s * 0.32, s * 0.22, shade(c, -0.08));
+      leafShape(ctx, x + s * 0.24, y - s * 0.36, s * 0.28, -0.5);
+    },
+    // 西瓜：半圆瓜皮 + 红瓤 + 籽
+    watermelon: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.arc(x, y + s * 0.22, s * 0.44, Math.PI, 0);
+      ctx.closePath();
+      ctx.fillStyle = c;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y + s * 0.2, s * 0.34, Math.PI, 0);
+      ctx.closePath();
+      ctx.fillStyle = '#e8534f';
+      ctx.fill();
+      var seeds = [[-0.16, 0.18], [0, 0.1], [0.16, 0.18], [-0.08, 0.3], [0.09, 0.3]];
+      for (var i = 0; i < seeds.length; i++) {
+        ctx.save();
+        ctx.translate(x + seeds[i][0] * s, y + seeds[i][1] * s);
+        ctx.rotate(-0.3);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, s * 0.035, s * 0.06, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#2b2b1f';
+        ctx.fill();
+        ctx.restore();
+      }
+    },
+    // 香蕉：弯月轮廓 + 蒂
+    banana: function (ctx, x, y, s, c) {
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.4, y - s * 0.12);
+      ctx.quadraticCurveTo(x, y + s * 0.62, x + s * 0.42, y - s * 0.06);
+      ctx.quadraticCurveTo(x + s * 0.16, y + s * 0.3, x - s * 0.26, y + s * 0.02);
+      ctx.closePath();
+      ctx.fillStyle = c;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.4, y - s * 0.12);
+      ctx.quadraticCurveTo(x, y + s * 0.56, x + s * 0.42, y - s * 0.06);
+      ctx.lineWidth = Math.max(1, s * 0.03);
+      ctx.strokeStyle = 'rgba(120,90,20,.3)';
+      ctx.stroke();
+      circle(ctx, x - s * 0.42, y - s * 0.14, s * 0.05, '#6b5a1e');
+    },
+    // 菠萝：冠叶 + 椭圆果身 + 菱形网纹
+    pineapple: function (ctx, x, y, s, c) {
+      for (var i = -2; i <= 2; i++) {
+        leafShape(ctx, x, y - s * 0.26, s * 0.34, -Math.PI / 2 + i * 0.38, '#4f9c3a');
+      }
+      ctx.beginPath();
+      ctx.ellipse(x, y + s * 0.1, s * 0.3, s * 0.36, 0, 0, Math.PI * 2);
+      ctx.fillStyle = c;
+      ctx.fill();
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(x, y + s * 0.1, s * 0.3, s * 0.36, 0, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.strokeStyle = 'rgba(150,100,20,.32)';
+      ctx.lineWidth = Math.max(1, s * 0.025);
+      for (var k = -3; k <= 3; k++) {
+        ctx.beginPath();
+        ctx.moveTo(x - s * 0.4 + k * s * 0.14, y - s * 0.4);
+        ctx.lineTo(x + s * 0.4 + k * s * 0.14, y + s * 0.6);
+        ctx.moveTo(x + s * 0.4 + k * s * 0.14, y - s * 0.4);
+        ctx.lineTo(x - s * 0.4 + k * s * 0.14, y + s * 0.6);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  };
+
+  // 按主色反查水果形状（各玩法里的 color 互不相同）
+  var SHAPE_BY_COLOR = {
+    '#e63946': 'apple', '#d94f6a': 'cherry', '#f0546b': 'strawberry',
+    '#ef4b6b': 'strawberry', '#f98e5a': 'peach', '#f9943f': 'orange',
+    '#f9a03f': 'orange', '#f7d34d': 'lemon', '#f6c445': 'lemon',
+    '#a8d94a': 'apple', '#bfe36a': 'pear', '#8dc63f': 'kiwi',
+    '#9b6ad6': 'grape', '#7b5cc4': 'grape', '#3fae6a': 'watermelon',
+    '#e0503f': 'watermelon', '#f2d13c': 'banana', '#f4a63a': 'pineapple'
+  };
+
+  var SHAPE_BY_EMOJI = {
+    '🍎': 'apple', '🍏': 'apple', '🍊': 'orange', '🍋': 'lemon',
+    '🍇': 'grape', '🍓': 'strawberry', '🍑': 'peach', '🍐': 'pear',
+    '🥝': 'kiwi', '🍒': 'cherry', '🍉': 'watermelon', '🍌': 'banana',
+    '🍍': 'pineapple'
+  };
+
+  function normalizeColor(c) {
+    if (!c) return '';
+    var s = String(c).toLowerCase().trim();
+    if (s.charAt(0) !== '#') return s;
+    if (s.length === 4) return '#' + s[1] + s[1] + s[2] + s[2] + s[3] + s[3];
+    return s;
+  }
+
+  function shapeName(color, emoji) {
+    return SHAPE_BY_COLOR[normalizeColor(color)] || SHAPE_BY_EMOJI[emoji] || 'apple';
+  }
+
   /**
-   * 画一个水果图案：同色圆底 + Emoji。
-   * 无论 Emoji 能否渲染，图案都是可辨识的（见上方说明）。
-   * @param {string} char  水果 Emoji（可以为空，只画圆底）
-   * @param {string} color 该水果的主色
+   * 画一个水果图案：完全由 Canvas 图元绘制，不依赖任何字体。
+   * 因此在 iOS 锁定模式 / 内置浏览器等限制彩色 Emoji 的环境里也能正常显示。
+   * @param {string} emoji 水果 Emoji（仅作为"画哪种水果"的线索，不会被绘制）
+   * @param {string} color 该水果主色
    */
-  function art(ctx, char, color, cx, cy, size, rotate) {
-    artBase(ctx, color, cx, cy, size);
-    if (char) emoji(ctx, char, cx, cy, size * 0.92, rotate);
+  function art(ctx, emoji, color, cx, cy, size) {
+    var draw = FRUIT_SHAPES[shapeName(color, emoji)] || FRUIT_SHAPES.apple;
+    ctx.save();
+    // 浅色托盘底，让图案在深浅两种卡片底色上都有轮廓
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * 0.54, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * 0.54, 0, Math.PI * 2);
+    ctx.lineWidth = Math.max(1, size * 0.03);
+    ctx.strokeStyle = 'rgba(0,0,0,.12)';
+    ctx.stroke();
+    draw(ctx, cx, cy, size, color || '#f2704a');
+    ctx.restore();
     return true;
   }
 
@@ -393,7 +616,8 @@
 
   FP.gfx = {
     roundRect: roundRect, shadow: shadow, noShadow: noShadow,
-    hexToRgba: hexToRgba, shade: shade, emoji: emoji, art: art, artBase: artBase,
+    hexToRgba: hexToRgba, shade: shade, emoji: emoji, art: art,
+    fruitShapes: FRUIT_SHAPES, shapeName: shapeName,
     label: label, fitText: fitText,
     createParticles: createParticles, createSurface: createSurface, createLoop: createLoop,
     polyfillCtx: polyfillCtx
