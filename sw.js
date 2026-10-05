@@ -3,7 +3,7 @@
  * 策略：同源 GET 请求优先走缓存，后台更新；离线时直接回退缓存。
  * 发布新版本时把下面的版本号 +1 即可强制刷新所有客户端缓存。
  */
-var CACHE = 'fruit-puzzle-v3';
+var CACHE = 'fruit-puzzle-v5';
 var ASSETS = [
   './',
   './index.html',
@@ -45,7 +45,16 @@ self.addEventListener('activate', function (event) {
 self.addEventListener('fetch', function (event) {
   var req = event.request;
   if (req.method !== 'GET') return;
-  if (new URL(req.url).origin !== self.location.origin) return;
+  var url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
+  // 诊断页永远走网络：它本身就是用来排查"看到的是不是旧缓存"的，不能被缓存
+  if (url.pathname.indexOf('diag.html') >= 0) {
+    event.respondWith(fetch(req).catch(function () {
+      return new Response('offline', { status: 503, statusText: 'offline' });
+    }));
+    return;
+  }
 
   event.respondWith(
     caches.match(req).then(function (cached) {
