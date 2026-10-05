@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<title>卡片渲染测试 · 果园谜题</title>
+<style>
+  :root { color-scheme: light dark; --bg:#fff8ef; --fg:#2f2013; --muted:#7a6551; --card:#fff; --border:rgba(96,62,24,.16); --ok:#2f8b46; --bad:#cc3b3b; --accent:#f2704a; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0d1512; --fg:#f3ece4; --muted:#a8b3ab; --card:#172420; --border:rgba(255,255,255,.14); } }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:14px 12px 40px; background:var(--bg); color:var(--fg);
+         font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; font-size:14px; line-height:1.55;
+         -webkit-text-size-adjust:100%; }
+  h1 { font-size:17px; margin:0 0 2px; }
+  .sub { color:var(--muted); font-size:12px; margin-bottom:12px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:12px; }
+  .card h2 { font-size:14px; margin:0 0 4px; }
+  .card .note { font-size:12px; color:var(--muted); margin-bottom:10px; }
+  canvas { display:block; width:100%; background:rgba(127,127,127,.10); border-radius:10px; }
+  .verdict { font-size:15px; font-weight:700; }
+  .dump { font-size:12px; font-family:ui-monospace,Menlo,monospace; white-space:pre-wrap; word-break:break-word; color:var(--muted); margin-top:8px; }
+  .pill { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; border:1px solid currentColor; }
+  .pill.ok { color:var(--ok); } .pill.bad { color:var(--bad); }
+  button { font:inherit; font-weight:600; min-height:42px; padding:0 18px; border-radius:999px; border:1px solid var(--border); background:var(--card); color:var(--fg); margin-top:8px; }
+  .tags { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<h1>卡片渲染测试</h1>
+<div class="sub">用与「记忆果园」完全相同的绘制代码，并排对比新旧画法</div>
+
+<div class="card">
+  <h2>版本自检</h2>
+  <div id="ver" class="dump">读取中…</div>
+  <div class="tags">
+    <span id="pillNew" class="pill">新画法</span>
+    <span id="pillOld" class="pill">旧画法</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>A · 新画法（当前线上代码）同色圆底 + Emoji</h2>
+  <div class="note">Emoji 能渲染 → 看到水果；渲染不出来 → 看到彩色圆形花色。两种情况都不会空白。</div>
+  <canvas id="cA"></canvas>
+</div>
+
+<div class="card">
+  <h2>B · 旧画法（上一版代码）只画 Emoji</h2>
+  <div class="note">如果这一排是空白、而 A 排有彩色圆形，就说明这台设备确实画不出 Canvas Emoji，新画法已经兜住了。</div>
+  <canvas id="cB"></canvas>
+</div>
+
+<div class="card">
+  <h2>判定</h2>
+  <div id="verdict" class="verdict">计算中…</div>
+  <button id="copy">复制诊断文本</button>
+</div>
+
+<script>
+(function () {
+  var lines = [];
+  function log(s) { lines.push(s); }
+  document.getElementById('ver').textContent =
+    '地址参数：' + (location.search || '(无)') + '\n' +
+    'UA：' + navigator.userAgent + '\n' +
+    'DPR：' + (window.devicePixelRatio || 1) + '  视口：' + window.innerWidth + 'x' + window.innerHeight + '\n' +
+    '读取时间：' + new Date().toLocaleString();
+  log('[ver] ' + location.search + ' | ' + navigator.userAgent);
+
+  var FONTS = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",sans-serif';
+
+  // 与 js/games/memory.js 里 FACES 完全一致
+  var FACES = [
+    { emoji: '🍎', color: '#e63946' },
+    { emoji: '🍊', color: '#f9943f' },
+    { emoji: '🍋', color: '#f6c445' },
+    { emoji: '🍇', color: '#9b6ad6' },
+    { emoji: '🍓', color: '#ef4b6b' },
+    { emoji: '🍑', color: '#f98e5a' },
+    { emoji: '🍐', color: '#bfe36a' },
+    { emoji: '🥝', color: '#8dc63f' },
+    { emoji: '🍒', color: '#f0546b' },
+    { emoji: '🍉', color: '#3fae6a' },
+    { emoji: '🍌', color: '#f2d13c' },
+    { emoji: '🍍', color: '#f6c445' }
+  ];
+
+  function setup(canvas, cssW, cssH) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    var ctx = null;
+    try { ctx = canvas.getContext('2d', { willReadFrequently: true }); }
+    catch (e) { ctx = canvas.getContext('2d'); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+    return ctx;
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    var rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawBackCard(ctx, cx, cy, size) {
+    var half = size / 2;
+    roundRectPath(ctx, cx - half, cy - half, size, size, size * 0.22);
+    var g = ctx.createLinearGradient(cx - half, cy - half, cx + half, cy + half);
+    g.addColorStop(0, '#ff9f68');
+    g.addColorStop(1, '#f2704a');
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+
+  // 复刻 cardFace 的卡片底
+  function drawCardBase(ctx, cx, cy, size, color) {
+    var half = size / 2;
+    roundRectPath(ctx, cx - half, cy - half, size, size, size * 0.22);
+    var grad = ctx.createLinearGradient(cx - half, cy - half, cx + half, cy + half);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, color);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  // 复刻「新」art()：同色圆底 + Emoji
+  function drawArtNew(ctx, cx, cy, size, color, emojiChar) {
+    var r = (size * 0.58) / 2;
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
+
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.8, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fill();
+
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.lineWidth = Math.max(1, r * 0.12);
+    ctx.strokeStyle = 'rgba(0,0,0,.16)'; ctx.stroke();
+
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.3, -r * 0.36, r * 0.3, r * 0.16, -0.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.88);
+    ctx.quadraticCurveTo(r * 0.36, -r * 1.3, r * 0.06, -r * 1.04);
+    ctx.lineWidth = Math.max(1.2, r * 0.15);
+    ctx.strokeStyle = 'rgba(70,120,40,.8)';
+    ctx.lineCap = 'round'; ctx.stroke();
+    ctx.restore();
+
+    // Emoji
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.font = (size * 0.58 * 0.92) + 'px ' + FONTS;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000';
+    ctx.fillText(emojiChar, 0, size * 0.02);
+    ctx.restore();
+  }
+
+  // 复刻「旧」画法：只画 Emoji
+  function drawArtOld(ctx, cx, cy, size, emojiChar) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.font = (size * 0.58) + 'px ' + FONTS;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000';
+    ctx.fillText(emojiChar, 0, size * 0.02);
+    ctx.restore();
+  }
+
+  function inkCount(ctx, w, h) {
+    try {
+      var d = ctx.getImageData(0, 0, w, h).data;
+      var n = 0;
+      for (var i = 3; i < d.length; i += 4) if (d[i] > 12) n++;
+      return n;
+    } catch (e) { return -1; }
+  }
+
+  function render(which) {
+    var isNew = which === 'A';
+    var perRow = 4, cell = 78, padX = 12, padY = 12;
+    var rows = Math.ceil(FACES.length / perRow);
+    var cssW = padX * 2 + cell * perRow;
+    var cssH = padY * 2 + cell * rows;
+    var cv = document.getElementById(isNew ? 'cA' : 'cB');
+    var ctx = setup(cv, cssW, cssH);
+
+    FACES.forEach(function (f, i) {
+      var col = i % perRow, row = Math.floor(i / perRow);
+      var cx = padX + col * cell + cell / 2;
+      var cy = padY + row * cell + cell / 2;
+      var size = cell - 14;
+      drawBackCard(ctx, cx, cy, size);                 // 卡片底（实际游戏里也画了）
+      if (isNew) drawArtNew(ctx, cx, cy, size, f.color, f.emoji);
+      else drawArtOld(ctx, cx, cy, size, f.emoji);
+    });
+
+    return inkCount(ctx, cv.width, cv.height);
+  }
+
+  var inkNew = render('A');
+  var inkOld = render('B');
+
+  // 逐字符在"旧画法"下的表现
+  var oldChar = (function () {
+    var cv = document.createElement('canvas');
+    var ctx = cv.getContext('2d');
+    cv.width = 64; cv.height = 64;
+    ctx.clearRect(0, 0, 64, 64);
+    ctx.font = '40px ' + FONTS;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#000';
+    ctx.fillText('🍇', 32, 32);
+    return inkCount(ctx, 64, 64);
+  })();
+
+  log('[A-new] ink=' + inkNew);
+  log('[B-old] ink=' + inkOld);
+  log('[old-single 🍇] ink=' + oldChar);
+
+  var pillNew = document.getElementById('pillNew');
+  pillNew.textContent = '新画法 ' + (inkNew > 0 ? '有绘制' : '空白');
+  pillNew.className = 'pill ' + (inkNew > 0 ? 'ok' : 'bad');
+
+  var pillOld = document.getElementById('pillOld');
+  pillOld.textContent = '旧画法 ' + (inkOld > 0 ? '有绘制' : '空白');
+  pillOld.className = 'pill ' + (inkOld > 0 ? 'ok' : 'bad');
+
+  var v = document.getElementById('verdict');
+  var msg;
+  if (inkNew > 0 && inkOld === 0) {
+    msg = '结论：这台设备画不出 Canvas Emoji（旧画法整排空白），但新画法的同色圆底正常 —— 说明修复生效，游戏里应该能看到彩色圆形花色。';
+  } else if (inkNew > 0 && inkOld > 0) {
+    msg = '结论：这台设备的 Canvas Emoji 完全正常，新旧画法都能画出来。若游戏里仍空白，就是页面缓存了旧代码 —— 请用无痕窗口打开，或访问带 ?v=7 的地址。';
+  } else {
+    msg = '结论：连新的同色圆底都没画出来，属于更底层的绘制问题，请把这一页截图发给开发者。';
+  }
+  v.textContent = msg;
+  log('[verdict] ' + msg);
+
+  document.getElementById('copy').addEventListener('click', function () {
+    var text = lines.join('\n');
+    var done = function () { v.textContent = '已复制'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { alert(text); });
+    } else { alert(text); }
+  });
+})();
+</script>
+</body>
+</html>
