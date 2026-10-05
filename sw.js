@@ -3,12 +3,16 @@
  * 策略：同源 GET 请求优先走缓存，后台更新；离线时直接回退缓存。
  * 发布新版本时把下面的版本号 +1 即可强制刷新所有客户端缓存。
  */
-var CACHE = 'fruit-puzzle-v16';
+var CACHE = 'fruit-puzzle-v18';
 var ASSETS = [
   './',
   './index.html',
   './404.html',
   './manifest.webmanifest',
+  './icon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/apple-touch-icon.png',
   './css/base.css',
   './css/layout.css',
   './css/games.css',

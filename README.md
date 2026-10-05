@@ -11,13 +11,16 @@
 fruit-puzzle-garden/
 ├─ index.html              入口（双击即可玩）
 ├─ 404.html                GitHub Pages 的兜底页（自动跳回首页）
+├─ icon.svg                站点图标（矢量，浏览器可直接用）
+├─ icons/                  分享缩略图与 App 图标（由脚本生成，见下）
 ├─ manifest.webmanifest    PWA 清单（可"添加到主屏幕"）
 ├─ sw.js                   离线缓存（仅在 http(s) 下生效）
 ├─ LICENSE                 MIT
 ├─ .gitignore
 ├─ publish.bat             双击即可发布（推荐）
 ├─ tool/
-│  └─ publish.ps1          发布脚本本体（自动 init / 提交 / 推送）
+│  ├─ publish.ps1          发布脚本本体（自动 init / 提交 / 推送）
+│  └─ generate-icons.py    生成 icons/*.png（分享缩略图必需）
 ├─ css/
 │  ├─ base.css             设计令牌、按钮、吐司、弹窗、设置面板
 │  ├─ layout.css           应用骨架与响应式断点
@@ -176,12 +179,56 @@ https://<你的用户名>.github.io/<仓库名>/
 
 Service Worker 采用"缓存优先 + 后台更新"，用户下次打开会自动拿到新版本。若想强制所有客户端立刻刷新缓存，把 `sw.js` 顶部的 `CACHE = 'fruit-puzzle-v3'` 版本号 +1 再推送即可。
 
+### 分享出去的链接没有缩略图 / 头像？
+
+**原因**：微信、QQ、微博这类平台**不会**把内联的 `data:URI` 图标当作分享缩略图，它们要求一个**真实可访问的图片 URL（HTTPS + PNG）**。所以必须先有真正的图片文件。
+
+**第 1 步 · 生成本地图标文件**
+
+```powershell
+pip install pillow
+python tool\generate-icons.py
+```
+
+会在 `icons/` 下生成：
+
+| 文件 | 用途 |
+| --- | --- |
+| `icon-512.png` / `icon-192.png` | PWA 主屏图标 |
+| `apple-touch-icon.png` | iOS"添加到主屏幕"图标 |
+| `share-1200x630.png` | **分享卡片缩略图**（微信 / QQ / 微博推荐尺寸） |
+
+**第 2 步 · 提交推送**（`index.html` 里的 `og:image` 已指向 `icons/share-1200x630.png`）
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tool\publish.ps1 -Repo https://github.com/chomoo-fonsam/fruit-puzzle-garden.git
+```
+
+**第 3 步 · 验证**
+
+浏览器直接打开图片地址，能显示就说明部署正确：
+
+```
+https://<用户名>.github.io/<仓库名>/icons/share-1200x630.png
+```
+
+**第 4 步 · 清掉平台的旧缓存**（这一步最容易被忽略）
+
+各平台都会缓存链接卡片，抓过一次就不再更新。改完图标后如果预览还是旧样子：
+
+- **微信**：换一个从没分享过的链接（例如结尾加 `?v=2`）再发一次；或在「设置 → 通用 → 存储空间 → 清理缓存」；
+- **QQ / 微博**：同理，加参数或用平台的"刷新卡片"入口；
+- **iMessage / 其它**：加 `?v=2` 即可强制重新抓取。
+
+> 补充说明：`icon.svg` 是矢量图标，浏览器标签页和多数现代平台可以直接用；但**社交平台的缩略图必须用 PNG**，所以 `tool/generate-icons.py` 这一步不能省。
+
 ### 手机端排查小抄
 
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
-| 手机上水果图案变成空白/方块 | 个别较新的 Emoji（如 🫐🥭，Emoji 11.0）在旧系统字体里没有字形 | 已改用全平台通行的老 Emoji，并加了 `gfx.art()` 兜底：画不出就降级为同色圆点，不会留白 |
-| 改完代码手机上还是旧样子 | Service Worker 缓存优先，可能仍命中旧缓存 | 下拉刷新一次；或 `sw.js` 里 `CACHE` 版本号 +1；也可在浏览器设置里清除该站点数据 |
+| 水果图案空白 / 所有卡片长得一样 | iOS「锁定模式 / 高级隐私保护」或内置浏览器（QQ、微信）限制了彩色 Emoji 字体 | 已改为**纯 Canvas 手绘水果**，不依赖字体；若仍是旧样子说明加载的是旧缓存 |
+| 改完代码手机上还是旧样子 | Service Worker 缓存优先，可能仍命中旧缓存 | 看 `FP.util.build` 确认版本；不要就用 F12 → Application → Clear site data，或直接无痕窗口 |
+| 相近水果分不清（草莓/樱桃、桃子/橙子） | 同色系在小屏上难分辨 | 已拉开配色并强化形状差异（卡面不叠加任何符号） |
 | 完全没反应 | `file://` 下 Service Worker 不注册，属正常 | 用 http(s) 访问（Pages 链接本身即 https） |
 
 ## 上手试玩

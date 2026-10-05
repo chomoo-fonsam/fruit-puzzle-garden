@@ -11,9 +11,27 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="果园谜题" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='48'%3E%F0%9F%8D%8E%3C/text%3E%3C/svg%3E" />
+<link rel="icon" type="image/svg+xml" href="icon.svg" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+<link rel="apple-touch-icon" href="icon.svg" />
 <link rel="manifest" href="manifest.webmanifest" />
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23f2704a'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' dominant-baseline='middle' font-size='300'%3E%F0%9F%8D%8E%3C/text%3E%3C/svg%3E" />
+
+<!-- 分享卡片（微信 / QQ / 微博 / iMessage 等会读取这些标签） -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="果园谜题" />
+<meta property="og:title" content="果园谜题 · 三种水果益智玩法" />
+<meta property="og:description" content="果园 2048、水果消消乐、记忆果园。滑动、交换、翻牌，随时随地来一局，离线也能玩。" />
+<meta property="og:image" content="icons/share-1200x630.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="果园谜题 · 水果主题益智游戏" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="果园谜题 · 三种水果益智玩法" />
+<meta name="twitter:description" content="果园 2048、水果消消乐、记忆果园。滑动、交换、翻牌，随时随地来一局。" />
+<meta name="twitter:image" content="icons/share-1200x630.png" />
+<meta itemprop="image" content="icons/share-1200x630.png" />
 <link rel="stylesheet" href="css/base.css" />
 <link rel="stylesheet" href="css/layout.css" />
 <link rel="stylesheet" href="css/games.css" />
@@ -133,5 +151,30 @@
 <script src="js/games/match3.js"></script>
 <script src="js/games/memory.js"></script>
 <script src="js/main.js"></script>
+<script>
+// 分享卡片兜底：上面的 og:image / twitter:image 用的是相对路径，
+// 部分抓取器（尤其微信）只认绝对地址，这里在运行时补成完整 URL。
+// 更稳妥的做法是按 README 说明，直接把 <meta property="og:image"> 改成你的绝对地址，
+// 这样连不执行 JS 的抓取器也能取到缩略图。
+(function () {
+  try {
+    var base = location.origin + location.pathname.replace(/[^\/]*$/, '');
+    var nodes = document.querySelectorAll('meta[property="og:image"], meta[name="twitter:image"], meta[itemprop="image"]');
+    for (var i = 0; i < nodes.length; i++) {
+      var v = nodes[i].getAttribute('content');
+      if (v && v.indexOf('://') < 0 && v.charAt(0) !== '/') {
+        nodes[i].setAttribute('content', base + v);
+      }
+    }
+    var ogUrl = document.querySelector('meta[property="og:url"]');
+    if (!ogUrl) {
+      ogUrl = document.createElement('meta');
+      ogUrl.setAttribute('property', 'og:url');
+      document.head.appendChild(ogUrl);
+    }
+    ogUrl.setAttribute('content', location.origin + location.pathname);
+  } catch (e) { /* 忽略 */ }
+})();
+</script>
 </body>
 </html>
