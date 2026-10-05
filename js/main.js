@@ -315,12 +315,10 @@
     var hasSave = FP.store.hasAnySave();
     dom.btnContinue.hidden = !hasSave;
     if (hasSave) {
-      var last = FP.store.get('stats.lastPlayed', 0);
       var label = dom.btnContinue.querySelector('span');
       if (label) label.textContent = FP.i18n.t('btn.continue');
     }
-    var s = FP.store.stats();
-    dom.homeTip.textContent = (FP.Device.touch ? '📱 ' : '🖥️ ') +
+    dom.homeTip.textContent = (FP.util.Device.touch ? '📱 ' : '🖥️ ') +
       FP.i18n.t('app.tagline') + ' · ' + FP.i18n.t('a11y.board');
     // 可用存储提示
     if (!FP.store.available) {

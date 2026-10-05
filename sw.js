@@ -3,7 +3,7 @@
  * 策略：同源 GET 请求优先走缓存，后台更新；离线时直接回退缓存。
  * 发布新版本时把下面的版本号 +1 即可强制刷新所有客户端缓存。
  */
-var CACHE = 'fruit-puzzle-v8';
+var CACHE = 'fruit-puzzle-v9';
 var ASSETS = [
   './',
   './index.html',
