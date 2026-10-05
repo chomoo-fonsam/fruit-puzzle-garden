@@ -1,0 +1,26 @@
+# ── 操作系统 / 编辑器 ──
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*~
+
+# ── 日志与临时文件 ──
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tmp
+tmp/
+temp/
+
+# ── 截图 / 导出产物（本地调试用，不入库）──
+screenshots/
+*.local.png
+
+# 本项目是零依赖的纯静态站点，正常情况下不会产生 node_modules。
+# 如果你后来引入了构建工具，取消下面两行的注释：
+# node_modules/
+# dist/

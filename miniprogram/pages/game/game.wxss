@@ -1,0 +1,97 @@
+/* pages/game/game.wxss — 游戏页 */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 12rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  gap: 10rpx;
+  background: var(--pageBg, #fff8ef);
+}
+
+/* 计分区 */
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  padding-top: 6rpx;
+}
+.hud .score-chip { flex: 0 0 auto; }
+.hud .score-chip:nth-child(2) { margin-left: auto; }
+
+/* 棋盘区：flex:1 1 0 让高度只由页面剩余空间决定，不受画布自身尺寸影响 */
+.stage {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+/* 画布尺寸由 JS 精确设置（含 DPR 缩放），这里不要拉伸它 */
+.board {
+  display: block;
+  touch-action: none;
+}
+
+.gesture-hint {
+  flex: 0 0 auto;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+/* 底部操作栏 */
+.controlbar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14rpx;
+  padding-top: 6rpx;
+}
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  width: 100%;
+}
+
+/* 虚拟方向键（仅 2048） */
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 8rpx;
+  padding: 8rpx;
+  width: 330rpx;
+  border-radius: var(--radius-md);
+  background: var(--surface-color);
+  border: 2rpx solid var(--border-color);
+}
+.dpad-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68rpx;
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: 28rpx;
+}
+.dpad-btn:active, .dpad-active {
+  background: var(--accent-color);
+  color: var(--accent-ink);
+  transform: scale(0.94);
+}
+.dpad-btn:nth-child(1) { grid-area: 1 / 1; }
+.dpad-up { grid-area: 1 / 2; }
+.dpad-btn:nth-child(3) { grid-area: 1 / 3; }
+.dpad-down { grid-area: 2 / 2; }
+
+/* 暂停 / 结算时棋盘变淡 */
+.page[data-state="paused"] .board { opacity: 0.5; }
+.page[data-state="over"] .board { opacity: 0.8; }
+.page[data-state="won"] .board { opacity: 0.85; }

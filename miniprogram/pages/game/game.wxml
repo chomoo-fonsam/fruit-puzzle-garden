@@ -1,0 +1,83 @@
+<!-- 果园谜题 · 游戏页 -->
+<view class="page" data-state="{{state}}">
+
+  <view class="hud">
+    <view class="score-chip {{chips[0].hot ? 'is-hot' : ''}}" wx:if="{{chips[0].show}}">
+      <text class="chip-label">{{chips[0].label}}</text>
+      <text class="chip-value">{{chips[0].value}}</text>
+    </view>
+    <view class="score-chip is-muted" wx:if="{{chips[1].show}}">
+      <text class="chip-label">{{chips[1].label}}</text>
+      <text class="chip-value">{{chips[1].value}}</text>
+    </view>
+    <view class="score-chip is-muted {{chips[2].hot ? 'is-hot' : ''}}" wx:if="{{chips[2].show}}">
+      <text class="chip-label">{{chips[2].label}}</text>
+      <text class="chip-value">{{chips[2].value}}</text>
+    </view>
+  </view>
+
+  <view class="stage">
+    <canvas
+      id="board"
+      class="board"
+      type="2d"
+      bindtouchstart="onTouchStart"
+      bindtouchmove="onTouchMove"
+      bindtouchend="onTouchEnd"
+      bindtouchcancel="onTouchCancel"
+    ></canvas>
+  </view>
+
+  <text class="gesture-hint" wx:if="{{hintText}}">{{hintText}}</text>
+
+  <view class="controlbar">
+    <view class="control-row">
+      <button class="btn btn-ghost btn-sm" wx:if="{{showUndo}}" bindtap="onUndo">↩ {{T['btn.undo']}}</button>
+      <button class="btn btn-ghost btn-sm" wx:if="{{showHint}}" bindtap="onHint">💡 {{T['btn.hint']}}</button>
+      <button class="btn btn-ghost btn-sm" wx:if="{{showShuffle}}" bindtap="onShuffle">🔀 {{T['btn.shuffle']}}</button>
+      <button class="btn btn-soft btn-sm" bindtap="onRestart">🔄 {{T['btn.restart']}}</button>
+      <button class="btn btn-soft btn-sm" bindtap="onPause">⏸ {{T['nav.pause']}}</button>
+    </view>
+
+    <view class="dpad" wx:if="{{showDpad}}">
+      <view class="dpad-btn" data-dir="left" bindtap="onDir" hover-class="dpad-active">◀</view>
+      <view class="dpad-btn dpad-up" data-dir="up" bindtap="onDir" hover-class="dpad-active">▲</view>
+      <view class="dpad-btn" data-dir="right" bindtap="onDir" hover-class="dpad-active">▶</view>
+      <view class="dpad-btn dpad-down" data-dir="down" bindtap="onDir" hover-class="dpad-active">▼</view>
+    </view>
+  </view>
+</view>
+
+<!-- 吐司 -->
+<view class="toast {{toast.show ? 'show' : ''}} {{toast.kind ? 'is-' + toast.kind : ''}}">{{toast.text}}</view>
+
+<!-- 暂停 / 结算弹窗 -->
+<view class="modal-root" wx:if="{{modal.show}}">
+  <view class="modal-scrim" bindtap="onScrim"></view>
+  <view class="modal">
+    <text class="modal-title">{{modal.title}}</text>
+    <text class="modal-text" wx:if="{{modal.text}}">{{modal.text}}</text>
+
+    <view class="modal-score" wx:if="{{modal.score !== ''}}">
+      <text class="modal-score-value">{{modal.score}}</text>
+      <text class="modal-score-label">{{modal.scoreLabel}}</text>
+    </view>
+
+    <view class="modal-rows" wx:if="{{modal.rows.length}}">
+      <view class="modal-row" wx:for="{{modal.rows}}" wx:key="label">
+        <text>{{item.label}}</text>
+        <text class="modal-row-value">{{item.value}}</text>
+      </view>
+    </view>
+
+    <view class="modal-actions">
+      <button
+        wx:for="{{modal.actions}}"
+        wx:key="id"
+        class="btn {{item.kind === 'primary' ? 'btn-primary' : (item.kind === 'ghost' ? 'btn-ghost' : 'btn-soft')}}"
+        data-action="{{item.id}}"
+        bindtap="onModalAction"
+      >{{item.label}}</button>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto">
+<head>
+<meta charset="utf-8" />
+<title>果园谜题 · Fruit Puzzle Garden</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<meta name="description" content="水果主题益智游戏合集：果园 2048、水果消消乐、记忆果园。适配手机、平板、桌面与键盘操作。" />
+<meta name="theme-color" content="#101a14" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#fff8ef" media="(prefers-color-scheme: light)" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="果园谜题" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='48'%3E%F0%9F%8D%8E%3C/text%3E%3C/svg%3E" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23f2704a'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' dominant-baseline='middle' font-size='300'%3E%F0%9F%8D%8E%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/layout.css" />
+<link rel="stylesheet" href="css/games.css" />
+</head>
+<body>
+<div id="app" class="app" data-screen="boot">
+  <div class="bg-decor" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="topbar">
+    <button class="icon-btn" id="btn-home" aria-label="返回首页" title="返回首页 (Esc)">
+      <span class="ico" aria-hidden="true">🍎</span>
+      <span class="txt">首页</span>
+    </button>
+    <div class="topbar-title">
+      <h1 id="game-title">果园谜题</h1>
+      <p id="game-subtitle">Fruit Puzzle Garden</p>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="btn-sound" aria-pressed="true" aria-label="音效开关" title="音效开关">
+        <span class="ico" id="ico-sound" aria-hidden="true">🔊</span>
+      </button>
+      <button class="icon-btn" id="btn-pause" aria-label="暂停" title="暂停 (P)">
+        <span class="ico" aria-hidden="true">⏸️</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="hud" id="hud">
+    <div class="hud-left">
+      <div class="score-chip" id="chip-0">
+        <span class="chip-label">得分</span>
+        <strong class="chip-value">0</strong>
+      </div>
+      <div class="score-chip is-muted" id="chip-1">
+        <span class="chip-label">最高</span>
+        <strong class="chip-value">0</strong>
+      </div>
+    </div>
+    <div class="hud-right">
+      <div class="score-chip is-muted" id="chip-2">
+        <span class="chip-label">步数</span>
+        <strong class="chip-value">0</strong>
+      </div>
+    </div>
+  </div>
+
+  <main class="stage" id="stage">
+    <section class="screen" id="screen-home" aria-label="主菜单">
+      <div class="hero">
+        <div class="hero-mark" aria-hidden="true">🧺</div>
+        <h2 class="hero-title">果园谜题</h2>
+        <p class="hero-sub">Fruit Puzzle Garden · 三种水果益智玩法</p>
+      </div>
+      <div class="mode-grid" id="mode-grid"></div>
+      <div class="home-actions">
+        <button class="btn btn-primary" id="btn-continue" hidden>▶ <span>继续上次</span></button>
+      </div>
+      <p class="home-tip" id="home-tip"></p>
+      <div class="home-links">
+        <button class="link-btn" id="btn-settings">⚙️ 设置</button>
+        <button class="link-btn" id="btn-howto">❓ 玩法</button>
+        <button class="link-btn" id="btn-share">🔗 分享战绩</button>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-game" aria-label="游戏区" hidden>
+      <div class="board-holder" id="board-holder">
+        <canvas id="board" role="img" aria-label="游戏面板"></canvas>
+      </div>
+      <p class="gesture-hint" id="gesture-hint"></p>
+    </section>
+  </main>
+
+  <footer class="controlbar">
+    <div class="control-group control-primary" id="control-primary">
+      <button class="btn btn-ghost" id="btn-undo" hidden>↩ <span>撤销</span></button>
+      <button class="btn btn-ghost" id="btn-hint" hidden>💡 <span>提示</span></button>
+      <button class="btn btn-ghost" id="btn-shuffle" hidden>🔀 <span>洗牌</span></button>
+      <button class="btn btn-primary" id="btn-primary" hidden>开始</button>
+    </div>
+    <div class="control-group control-secondary">
+      <button class="btn btn-soft" id="btn-restart" hidden>🔄 <span>重开</span></button>
+      <button class="btn btn-soft" id="btn-settings2" aria-label="设置">⚙️</button>
+      <div class="touchpad" id="touchpad" aria-label="方向键">
+        <div class="dpad">
+          <button class="dpad-btn up" data-dir="up" aria-label="上">▲</button>
+          <button class="dpad-btn left" data-dir="left" aria-label="左">◀</button>
+          <button class="dpad-btn right" data-dir="right" aria-label="右">▶</button>
+          <button class="dpad-btn down" data-dir="down" aria-label="下">▼</button>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+
+  <div class="modal-root" id="modal-root" hidden>
+    <div class="modal-scrim" id="modal-scrim"></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h3 class="modal-title" id="modal-title">标题</h3>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-actions" id="modal-actions"></div>
+    </div>
+  </div>
+
+  <div class="rotate-note" aria-hidden="true">↻ 竖屏体验更佳 / Rotate for a better view</div>
+</div>
+
+<script src="js/core/util.js"></script>
+<script src="js/core/i18n.js"></script>
+<script src="js/core/store.js"></script>
+<script src="js/core/audio.js"></script>
+<script src="js/core/canvas.js"></script>
+<script src="js/core/input.js"></script>
+<script src="js/core/ui.js"></script>
+<script src="js/games/g2048.js"></script>
+<script src="js/games/match3.js"></script>
+<script src="js/games/memory.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!-- 果园谜题 · 首页 -->
+<view class="page">
+  <view class="decor" aria-hidden="true"></view>
+
+  <view class="hero">
+    <text class="hero-mark emoji">🧺</text>
+    <text class="hero-title">{{T['app.name']}}</text>
+    <text class="hero-sub">{{T['app.tagline']}}</text>
+  </view>
+
+  <view class="mode-grid">
+    <view
+      class="mode-card card"
+      wx:for="{{modes}}"
+      wx:key="id"
+      data-mode="{{item.id}}"
+      bindtap="onPick"
+      hover-class="card-hover"
+      hover-stay-time="60"
+    >
+      <view class="mode-emoji emoji">{{item.emoji}}</view>
+      <view class="mode-text">
+        <text class="mode-name">{{item.name}}</text>
+        <text class="mode-desc">{{item.desc}}</text>
+      </view>
+      <view class="mode-best">
+        <text class="mode-best-label">{{T['score.best']}}</text>
+        <text class="mode-best-value">{{item.best}}</text>
+      </view>
+    </view>
+  </view>
+
+  <button class="btn btn-primary btn-block continue" wx:if="{{hasSave}}" bindtap="onContinue">
+    ▶ {{T['btn.continue']}}
+  </button>
+
+  <view class="links">
+    <view class="link-btn" bindtap="onSettings">⚙️ {{T['btn.settings']}}</view>
+    <view class="link-btn" bindtap="onHowTo">❓ {{T['btn.howto']}}</view>
+    <view class="link-btn" bindtap="onShare">🔗 {{T['btn.share']}}</view>
+  </view>
+
+  <text class="foot-note">{{T['app.tagline']}}</text>
+</view>
+
+<!-- 吐司 -->
+<view class="toast {{toast.show ? 'show' : ''}} {{toast.kind ? 'is-' + toast.kind : ''}}">{{toast.text}}</view>
+
+<!-- 弹窗：设置 / 玩法 / 分享 -->
+<view class="modal-root" wx:if="{{modal.show}}">
+  <view class="modal-scrim" bindtap="onScrim"></view>
+  <view class="modal">
+    <text class="modal-title">{{modal.title}}</text>
+
+    <block wx:if="{{modal.kind === 'settings'}}">
+      <view class="set-row">
+        <text class="set-label">{{T['settings.language']}}</text>
+        <view class="segmented">
+          <view class="seg-btn {{lang === 'zh' ? 'is-on' : ''}}" data-lang="zh" bindtap="onLang">中文</view>
+          <view class="seg-btn {{lang === 'en' ? 'is-on' : ''}}" data-lang="en" bindtap="onLang">English</view>
+        </view>
+      </view>
+      <view class="set-row">
+        <text class="set-label">{{T['settings.theme']}}</text>
+        <view class="segmented">
+          <view class="seg-btn {{theme === 'auto' ? 'is-on' : ''}}" data-theme="auto" bindtap="onTheme">{{T['settings.theme.auto']}}</view>
+          <view class="seg-btn {{theme === 'light' ? 'is-on' : ''}}" data-theme="light" bindtap="onTheme">{{T['settings.theme.light']}}</view>
+          <view class="seg-btn {{theme === 'dark' ? 'is-on' : ''}}" data-theme="dark" bindtap="onTheme">{{T['settings.theme.dark']}}</view>
+        </view>
+      </view>
+      <view class="set-row">
+        <text class="set-label">{{T['settings.haptics']}}</text>
+        <switch checked="{{haptics}}" bindchange="onHaptics" color="#3f9d52" />
+      </view>
+      <view class="set-row">
+        <text class="set-label">{{T['settings.hintMoves']}}</text>
+        <switch checked="{{hintMoves}}" bindchange="onHintMoves" color="#3f9d52" />
+      </view>
+      <view class="set-row">
+        <text class="set-label">{{T['settings.animSpeed']}}</text>
+        <view class="segmented">
+          <view class="seg-btn {{speed === 'fast' ? 'is-on' : ''}}" data-speed="fast" bindtap="onSpeed">{{T['settings.speed.fast']}}</view>
+          <view class="seg-btn {{speed === 'normal' ? 'is-on' : ''}}" data-speed="normal" bindtap="onSpeed">{{T['settings.speed.normal']}}</view>
+          <view class="seg-btn {{speed === 'slow' ? 'is-on' : ''}}" data-speed="slow" bindtap="onSpeed">{{T['settings.speed.slow']}}</view>
+        </view>
+      </view>
+      <view class="set-note">
+        <text class="set-note-title">{{T['settings.controls']}}</text>
+        <text>{{T['settings.controlsText']}}</text>
+      </view>
+      <view class="set-note">
+        <text class="set-note-title">{{T['settings.about']}}</text>
+        <text>{{T['settings.aboutText']}}</text>
+      </view>
+      <button class="btn btn-ghost btn-block danger" bindtap="onReset">{{T['settings.reset']}}</button>
+    </block>
+
+    <block wx:elif="{{modal.kind === 'howto'}}">
+      <view class="howto">
+        <view class="howto-item" wx:for="{{howto}}" wx:key="id">
+          <view class="howto-head">
+            <text class="emoji">{{item.emoji}}</text>
+            <text class="howto-name">{{item.name}}</text>
+          </view>
+          <text class="howto-rules">{{item.rules}}</text>
+        </view>
+      </view>
+    </block>
+
+    <block wx:else>
+      <text class="modal-text" wx:if="{{modal.text}}">{{modal.text}}</text>
+      <view class="modal-score" wx:if="{{modal.score !== ''}}">
+        <text class="modal-score-value">{{modal.score}}</text>
+        <text class="modal-score-label">{{modal.scoreLabel}}</text>
+      </view>
+      <view class="modal-rows" wx:if="{{modal.rows.length}}">
+        <view class="modal-row" wx:for="{{modal.rows}}" wx:key="label">
+          <text>{{item.label}}</text>
+          <text class="modal-row-value">{{item.value}}</text>
+        </view>
+      </view>
+    </block>
+
+    <view class="modal-actions">
+      <button
+        wx:for="{{modal.actions}}"
+        wx:key="id"
+        class="btn {{item.kind === 'primary' ? 'btn-primary' : (item.kind === 'ghost' ? 'btn-ghost' : 'btn-soft')}}"
+        data-action="{{item.id}}"
+        bindtap="onModalAction"
+      >{{item.label}}</button>
+    </view>
+  </view>
+</view>

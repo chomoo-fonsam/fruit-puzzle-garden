@@ -1,0 +1,36 @@
+{
+  "light": {
+    "navBgColor": "#f2704a",
+    "navTxtStyle": "white",
+    "bgColor": "#fff8ef",
+    "bgTxtStyle": "dark",
+    "pageBg": "#fff8ef",
+    "surface": "#ffffff",
+    "surfaceSoft": "rgba(255,255,255,0.6)",
+    "border": "rgba(96,62,24,0.12)",
+    "text": "#2f2013",
+    "textMuted": "#7a6551",
+    "accent": "#f2704a",
+    "accent2": "#ffa84c",
+    "accentInk": "#ffffff",
+    "good": "#3f9d52",
+    "bad": "#d64545"
+  },
+  "dark": {
+    "navBgColor": "#172420",
+    "navTxtStyle": "white",
+    "bgColor": "#0d1512",
+    "bgTxtStyle": "light",
+    "pageBg": "#0d1512",
+    "surface": "rgba(255,255,255,0.07)",
+    "surfaceSoft": "rgba(255,255,255,0.045)",
+    "border": "rgba(255,255,255,0.12)",
+    "text": "#f3ece4",
+    "textMuted": "#a8b3ab",
+    "accent": "#ff8a5c",
+    "accent2": "#ffc061",
+    "accentInk": "#221208",
+    "good": "#6fd18a",
+    "bad": "#ff7a7a"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "appid": "touristappid",
+  "projectname": "fruit-puzzle-garden",
+  "description": "果园谜题 · 水果主题益智游戏合集（果园2048 / 水果消消乐 / 记忆果园）",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "./",
+  "libVersion": "2.32.3",
+  "setting": {
+    "urlCheck": false,
+    "es6": false,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "newFeature": true,
+    "coverView": true,
+    "nodeModules": false,
+    "autoAudits": false,
+    "uglifyFileName": false,
+    "checkInvalidKey": true,
+    "checkSiteMap": true,
+    "uploadWithSourceMap": true,
+    "compileHotReLoad": false,
+    "useMultiFrameRuntime": true,
+    "showShadowRootInWxmlPanel": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "ignoreUploadUnusedFiles": true
+  },
+  "condition": {
+    "miniprogram": {
+      "list": [
+        { "name": "首页", "pathName": "pages/index/index", "query": "", "scene": null },
+        { "name": "果园 2048", "pathName": "pages/game/game", "query": "mode=2048", "scene": null },
+        { "name": "水果消消乐", "pathName": "pages/game/game", "query": "mode=match3", "scene": null },
+        { "name": "记忆果园", "pathName": "pages/game/game", "query": "mode=memory", "scene": null }
+      ]
+    }
+  }
+}
