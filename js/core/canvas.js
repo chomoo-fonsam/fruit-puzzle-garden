@@ -353,70 +353,33 @@
     '#2f9e5c': 'watermelon', '#d64562': 'cherry'
   };
 
-  // 每种水果一个专属角标：即使主图案在小屏上不易分辨，也能一眼区分
+  // 每种水果一个专属小圆点（只用颜色区分，不再用几何符号）：
+  // 既是点缀，也能在相近水果之间提供最后一道区分线索。
   var FRUIT_MARKER = {
-    apple: { shape: 'dot', color: '#ffffff' },
-    orange: { shape: 'ring', color: '#ffffff' },
-    lemon: { shape: 'plus', color: '#ffffff' },
-    grape: { shape: 'triangle', color: '#ffffff' },
-    strawberry: { shape: 'square', color: '#ffffff' },
-    peach: { shape: 'diamond', color: '#ffffff' },
-    pear: { shape: 'bars', color: '#ffffff' },
-    kiwi: { shape: 'dot', color: '#3d3a24' },
-    cherry: { shape: 'ring', color: '#ffe14d' },
-    watermelon: { shape: 'triangle', color: '#ffffff' },
-    banana: { shape: 'plus', color: '#6b5a1e' },
-    pineapple: { shape: 'diamond', color: '#5b3f10' }
+    apple: '#ffffff',
+    orange: '#ffffff',
+    lemon: '#7a5a10',
+    grape: '#ffffff',
+    strawberry: '#ffffff',
+    peach: '#8a3a20',
+    pear: '#3f6b18',
+    kiwi: '#3d3a24',
+    cherry: '#ffe14d',
+    watermelon: '#ffffff',
+    banana: '#6b5a1e',
+    pineapple: '#5b3f10'
   };
 
-  // 在卡片角落画角标
+  // 在卡片右下角画一个同色系小圆点
   function drawMarker(ctx, name, cx, cy, size) {
-    var m = FRUIT_MARKER[name];
-    if (!m) return;
-    var s = size * 0.19;               // 角标半径
-    var x = cx + size * 0.36;
-    var y = cy + size * 0.36;
+    var color = FRUIT_MARKER[name];
+    if (!color) return;
+    var r = size * 0.115;
     ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = m.color;
-    ctx.strokeStyle = m.color;
-    ctx.lineWidth = Math.max(1.4, s * 0.42);
-    ctx.lineCap = 'square';
-
-    switch (m.shape) {
-      case 'dot':
-        ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI * 2); ctx.fill();
-        break;
-      case 'ring':
-        ctx.beginPath(); ctx.arc(0, 0, s * 0.72, 0, Math.PI * 2); ctx.stroke();
-        break;
-      case 'square':
-        ctx.fillRect(-s * 0.8, -s * 0.8, s * 1.6, s * 1.6);
-        break;
-      case 'diamond':
-        ctx.beginPath();
-        ctx.moveTo(0, -s); ctx.lineTo(s, 0); ctx.lineTo(0, s); ctx.lineTo(-s, 0);
-        ctx.closePath(); ctx.fill();
-        break;
-      case 'triangle':
-        ctx.beginPath();
-        ctx.moveTo(0, -s * 0.95); ctx.lineTo(s * 0.9, s * 0.7); ctx.lineTo(-s * 0.9, s * 0.7);
-        ctx.closePath(); ctx.fill();
-        break;
-      case 'plus':
-        ctx.beginPath();
-        ctx.moveTo(-s, 0); ctx.lineTo(s, 0);
-        ctx.moveTo(0, -s); ctx.lineTo(0, s);
-        ctx.stroke();
-        break;
-      case 'bars':
-        ctx.beginPath();
-        ctx.moveTo(-s, -s * 0.7); ctx.lineTo(s * 0.2, -s * 0.7);
-        ctx.moveTo(-s * 0.6, 0); ctx.lineTo(s * 0.6, 0);
-        ctx.moveTo(-s * 0.3, s * 0.7); ctx.lineTo(s, s * 0.7);
-        ctx.stroke();
-        break;
-    }
+    ctx.beginPath();
+    ctx.arc(cx + size * 0.38, cy + size * 0.38, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
     ctx.restore();
   }
 
