@@ -349,6 +349,10 @@
     modeCard: modeCard,
     openSettings: openSettings,
     openHowTo: openHowTo,
+    // 静态 DOM 文案按 data-i18n 刷新：实现在 i18n 里，这里作为 UI 接口转发
+    applyDom: function (scope) {
+      if (FP.i18n && FP.i18n.applyDom) return FP.i18n.applyDom(scope);
+    },
     dom: dom
   };
 })(window);

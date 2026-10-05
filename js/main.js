@@ -739,11 +739,19 @@
       dom.title.textContent = FP.i18n.t('app.name');
       dom.subtitle.textContent = FP.i18n.t('app.tagline');
     }
-    dom.btnUndo.querySelector('span').textContent = FP.i18n.t('btn.undo');
-    dom.btnHint.querySelector('span').textContent = FP.i18n.t('btn.hint');
-    dom.btnShuffle.querySelector('span').textContent = FP.i18n.t('btn.shuffle');
-    dom.btnRestart.querySelector('span').textContent = FP.i18n.t('btn.restart');
-    dom.btnHome.querySelector('span').textContent = FP.i18n.t('nav.home');
+    // 按钮文案：逐个容错，避免任何一个元素缺失就中断整个初始化
+    setBtnText(dom.btnUndo, FP.i18n.t('btn.undo'));
+    setBtnText(dom.btnHint, FP.i18n.t('btn.hint'));
+    setBtnText(dom.btnShuffle, FP.i18n.t('btn.shuffle'));
+    setBtnText(dom.btnRestart, FP.i18n.t('btn.restart'));
+    setBtnText(dom.btnHome, FP.i18n.t('nav.home'));
+  }
+
+  function setBtnText(btn, text) {
+    if (!btn) return;
+    var span = btn.querySelector('span');
+    if (span) span.textContent = text;
+    else btn.textContent = text;
   }
 
   /* ---------------- 深链：分享 / 指定模式 ---------------- */
