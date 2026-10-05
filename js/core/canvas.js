@@ -353,35 +353,8 @@
     '#2f9e5c': 'watermelon', '#d64562': 'cherry'
   };
 
-  // 每种水果一个专属小圆点（只用颜色区分，不再用几何符号）：
-  // 既是点缀，也能在相近水果之间提供最后一道区分线索。
-  var FRUIT_MARKER = {
-    apple: '#ffffff',
-    orange: '#ffffff',
-    lemon: '#7a5a10',
-    grape: '#ffffff',
-    strawberry: '#ffffff',
-    peach: '#8a3a20',
-    pear: '#3f6b18',
-    kiwi: '#3d3a24',
-    cherry: '#ffe14d',
-    watermelon: '#ffffff',
-    banana: '#6b5a1e',
-    pineapple: '#5b3f10'
-  };
-
-  // 在卡片右下角画一个同色系小圆点
-  function drawMarker(ctx, name, cx, cy, size) {
-    var color = FRUIT_MARKER[name];
-    if (!color) return;
-    var r = size * 0.115;
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx + size * 0.38, cy + size * 0.38, r, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.restore();
-  }
+  // 每种水果的区分完全依赖"形状 + 主色"本身，不再叠加任何角标/符号。
+  // （历史上这里曾给每种水果画过专属角标，视觉上很像调试标记，已移除。）
 
   var SHAPE_BY_EMOJI = {
     '🍎': 'apple', '🍏': 'apple', '🍊': 'orange', '🍋': 'lemon',
@@ -423,7 +396,6 @@
     ctx.strokeStyle = 'rgba(0,0,0,.12)';
     ctx.stroke();
     draw(ctx, cx, cy, size, color || '#f2704a');
-    drawMarker(ctx, name, cx, cy, size);
     ctx.restore();
     return true;
   }
@@ -653,7 +625,7 @@
   FP.gfx = {
     roundRect: roundRect, shadow: shadow, noShadow: noShadow,
     hexToRgba: hexToRgba, shade: shade, emoji: emoji, art: art,
-    fruitShapes: FRUIT_SHAPES, fruitMarkers: FRUIT_MARKER, shapeName: shapeName,
+    fruitShapes: FRUIT_SHAPES, shapeName: shapeName,
     label: label, fitText: fitText,
     createParticles: createParticles, createSurface: createSurface, createLoop: createLoop,
     polyfillCtx: polyfillCtx
