@@ -282,6 +282,15 @@
 
   Memory.prototype.flipAt = function (x, y) {
     if (this.over || this.state === 'resolve') return;
+    // 观察期不吃点击：明确告诉玩家"先记住位置"，避免误以为点了没反应
+    if (this.state === 'preview') {
+      var now = U.now();
+      if (!this._previewTipAt || now - this._previewTipAt > 1200) {
+        this._previewTipAt = now;
+        this.app.toast(FP.i18n.t('toast.memorize'), { duration: 1100 });
+      }
+      return;
+    }
     var card = this.cardAt(x, y);
     if (!card) return;
     this.cursor = card;
@@ -290,11 +299,11 @@
 
   Memory.prototype.flipCard = function (card) {
     if (!card || card.matched || card.up) return;
-    if (this.state === 'preview') {
-      // 预览期间点击不计数，只当作提前翻开
-      card.up = true;
-      return;
-    }
+
+    // 预览阶段（开局 1~2 秒）整盘都是亮着的：此时不吃点击。
+    // 之前这里会把牌翻开却不记录成"第一张"，导致预览结束后状态错位，
+    // 玩家会看到"点了两张一样的牌却没配上 / 牌自己翻回去"的怪现象。
+    if (this.state === 'preview') return;
     if (this.state !== 'idle') return;
 
     card.up = true;
@@ -439,6 +448,34 @@
 
   Memory.prototype.save = function () {
     FP.store.saveGame(this.id, this.snapshot());
+  };
+
+  // 自检：当前状态 / 第一张牌 / 以及"这盘每对同图案的牌都在哪两个格子"
+  Memory.prototype.debugBoard = function () {
+    var byFace = {};
+    this.cards.forEach(function (c) {
+      (byFace[c.face] = byFace[c.face] || []).push({
+        cell: [c.r, c.c], up: !!c.up, matched: !!c.matched, emoji: c.emoji
+      });
+    });
+    var faces = Object.keys(byFace).map(function (k) {
+      return {
+        face: Number(k),
+        emoji: byFace[k][0].emoji,
+        count: byFace[k].length,
+        cells: byFace[k].map(function (x) { return x.cell; })
+      };
+    });
+    var odd = faces.filter(function (f) { return f.count !== 2; });
+    return {
+      state: this.state,
+      rows: this.rows, cols: this.cols, pairs: this.pairs,
+      matches: this.matches, moves: this.moves, flips: this.flips,
+      previewLeft: this.previewLeft,
+      first: this.first ? [this.first.r, this.first.c, this.first.face] : null,
+      facesWithWrongCount: odd,
+      faces: faces
+    };
   };
 
   /* ---------------- 帧更新 ---------------- */
